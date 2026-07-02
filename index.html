@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OCI PostgreSQL Extension Showcase</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Showcase navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <img src="assets/postgres-showcase-logo.png" alt="" />
+          </div>
+          <div>
+            <p>OCI PostgreSQL</p>
+            <h1>Extension Showcase</h1>
+          </div>
+        </div>
+
+        <nav class="nav-list" id="navigation"></nav>
+
+        <div class="source-card">
+          <span class="source-kicker">Reference</span>
+          <a href="https://docs.oracle.com/en-us/iaas/Content/postgresql/extensions.htm" target="_blank" rel="noreferrer">
+            OCI supported extensions
+          </a>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="page-eyebrow">Customer-ready use cases</p>
+            <h2 id="page-title">Extension portfolio</h2>
+          </div>
+          <button class="icon-button help-trigger" id="help-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="About this page">
+            <i data-lucide="circle-help" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <section class="hero" id="hero">
+          <div class="hero-copy">
+            <span class="hero-pill" id="hero-pill">Built for demos</span>
+            <h3 id="hero-title">Turn supported PostgreSQL extensions into customer stories.</h3>
+            <p id="hero-summary">
+              Show how OCI Database with PostgreSQL can power AI search, query performance, automation, governance, location intelligence, and data products from one managed platform.
+            </p>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="orbital">
+              <div class="database-core">
+                <img src="assets/postgres-showcase-logo.png" alt="" />
+              </div>
+              <span class="orbit-dot dot-a"></span>
+              <span class="orbit-dot dot-b"></span>
+              <span class="orbit-dot dot-c"></span>
+              <span class="orbit-dot dot-d"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-view" id="content" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <div class="overlay" id="help-overlay" hidden>
+      <section class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <div class="help-heading">
+          <div>
+            <p class="eyebrow" id="help-eyebrow">Extension notes</p>
+            <h2 id="help-title">About this page</h2>
+          </div>
+          <button class="icon-button" id="help-close" type="button" aria-label="Close">
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="help-body" id="help-body"></div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "oci-postgresql-extension-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  },
+  "scripts": {
+    "prestart": "node -e \"const major = Number(process.versions.node.split('.')[0]); if (major < 18) { console.error('Node.js 18 or newer is required. Upgrade Node.js/npm before starting the showcase.'); process.exit(1); }\"",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
