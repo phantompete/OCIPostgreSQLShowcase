@@ -75,6 +75,8 @@ const pageData = {
     help: [
       ["pgvector", "Adds a vector type and similarity operators, so embeddings can live beside customer, product, and transaction records."],
       ["pg_trgm", "Provides trigram matching and indexes that rescue misspellings, partial names, and imperfect customer-entered text."],
+      ["Embeddings", "AI models turn text, images, documents, and events into numeric vectors. pgvector lets PostgreSQL compare those vectors to find items with similar meaning or visual content."],
+      ["RAG and agents", "Retrieval-augmented generation and agent workflows need trusted context. PostgreSQL can retrieve governed rows, documents, and customer memory before an answer or action is produced."],
       ["Why this stands out", "The demo keeps AI relevance close to governed data instead of copying every customer signal into a separate search-only platform."],
     ],
     render: renderAi,
@@ -480,6 +482,58 @@ npm start</code></pre>
 
 function renderAi() {
   return `
+    <div class="metric-strip ai-value-strip">
+      ${metric("62%", "faster answer retrieval")}
+      ${metric("31%", "case deflection uplift")}
+      ${metric("22%", "product discovery lift")}
+      ${metric("1", "governed retrieval layer")}
+    </div>
+
+    <section class="scenario-panel ai-canvas">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">AI use-case canvas</p>
+          <h3>From database records to grounded AI experiences</h3>
+        </div>
+        <div class="segmented" data-ai-pattern-tabs>
+          <button class="chip active" type="button" data-ai-pattern="semantic">Semantic</button>
+          <button class="chip" type="button" data-ai-pattern="rag">RAG</button>
+          <button class="chip" type="button" data-ai-pattern="image">Image</button>
+          <button class="chip" type="button" data-ai-pattern="agent">Agent</button>
+        </div>
+      </div>
+      <div class="ai-flow" aria-label="AI retrieval value flow">
+        ${aiFlowStep("database", "Operational data", "customers, products, cases")}
+        ${aiFlowStep("file-text", "Docs and images", "policies, manuals, photos")}
+        ${aiFlowStep("binary", "Embeddings", "model-generated vectors")}
+        ${aiFlowStep("scan-search", "pgvector search", "nearest meaning or image")}
+        ${aiFlowStep("spell-check", "pg_trgm rescue", "typos and partial terms")}
+        ${aiFlowStep("message-square-check", "Grounded action", "answer, match, or next step")}
+      </div>
+      <div class="grid two-col ai-pattern-grid">
+        <section class="ai-demo-panel" id="ai-pattern-demo"></section>
+        <section class="code-panel ai-pattern-code">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Pattern snippet</p>
+              <h3 id="ai-pattern-code-title">Semantic retrieval</h3>
+            </div>
+          </div>
+          <pre><code id="ai-pattern-code">SELECT id, title
+FROM knowledge_items
+ORDER BY embedding <=> :intent_embedding
+LIMIT 5;</code></pre>
+        </section>
+      </div>
+    </section>
+
+    <div class="grid three-col ai-lane-grid">
+      ${aiLane("search", "Semantic search", "Match customer intent to articles, products, or actions even when wording differs.", "meaning")}
+      ${aiLane("messages-square", "RAG", "Retrieve trusted context from PostgreSQL before a generated response is assembled.", "grounding")}
+      ${aiLane("image", "Image search", "Store image embeddings beside product metadata for visual similarity and asset discovery.", "visual")}
+      ${aiLane("bot", "Agent memory", "Give agents scoped customer history, open tasks, and eligible actions from operational rows.", "context")}
+    </div>
+
     <div class="grid two-col">
       <section class="scenario-panel">
         <div class="panel-heading">
@@ -511,6 +565,27 @@ ORDER BY embedding <=> :customer_intent
 LIMIT 5;</code></pre>
       </section>
     </div>
+  `;
+}
+
+function aiFlowStep(iconName, titleText, copy) {
+  return `
+    <article class="ai-flow-step">
+      <span class="ai-flow-icon"><i data-lucide="${iconName}" aria-hidden="true"></i></span>
+      <strong>${titleText}</strong>
+      <small>${copy}</small>
+    </article>
+  `;
+}
+
+function aiLane(iconName, titleText, copy, tagText) {
+  return `
+    <article class="card ai-lane-card">
+      ${icon(iconName, titleText === "RAG" ? "amber" : titleText === "Image search" ? "red" : titleText === "Agent memory" ? "violet" : "teal")}
+      <h3>${titleText}</h3>
+      <p>${copy}</p>
+      <div class="tag-row"><span class="tag">${tagText}</span></div>
+    </article>
   `;
 }
 
@@ -770,6 +845,70 @@ async function apiGet(path) {
   return response.json();
 }
 
+const aiPatternData = {
+  semantic: {
+    label: "Semantic retrieval",
+    prompt: "Customer typed: 'Can I pause service while traveling?'",
+    why: "PostgreSQL keeps customer, subscription, policy, and support data queryable while pgvector finds the closest meaning match.",
+    matches: [
+      ["0.96", "Subscription pause workflow", "Best policy match despite different wording."],
+      ["0.88", "Retention-safe save offers", "Related next action for support agents."],
+      ["0.81", "Travel billing exception", "Contextually similar billing guidance."],
+    ],
+    code: `SELECT article_id, title
+FROM support_articles
+ORDER BY embedding <=> :intent_embedding
+LIMIT 3;`,
+  },
+  rag: {
+    label: "RAG grounding",
+    prompt: "User asks: 'What should I tell a premium customer about warranty transfer?'",
+    why: "RAG retrieves governed PostgreSQL facts first, then generation can cite the right policy instead of improvising.",
+    matches: [
+      ["0.93", "Warranty transfer rules", "Authoritative policy context."],
+      ["0.87", "Premium support entitlements", "Account-tier specific guidance."],
+      ["0.79", "Recent warranty exceptions", "Operational precedent for escalation."],
+    ],
+    code: `WITH context AS (
+  SELECT title, body
+  FROM policy_docs
+  ORDER BY embedding <=> :question_embedding
+  LIMIT 4
+)
+SELECT json_agg(context) AS grounded_context
+FROM context;`,
+  },
+  image: {
+    label: "Image similarity",
+    prompt: "Field tech uploads a part photo from a mobile device.",
+    why: "Image embeddings can be stored beside SKU, inventory, region, and warranty rows so visual search becomes operational.",
+    matches: [
+      ["0.94", "Valve actuator A-17", "Closest visual profile and in-stock substitute."],
+      ["0.89", "Actuator seal kit", "Frequently co-ordered repair component."],
+      ["0.82", "Legacy actuator A-12", "Similar shape, lower confidence."],
+    ],
+    code: `SELECT sku, name, inventory_region
+FROM product_assets
+ORDER BY image_embedding <=> :photo_embedding
+LIMIT 5;`,
+  },
+  agent: {
+    label: "Agent memory and action",
+    prompt: "Agent goal: reduce churn risk before renewal call.",
+    why: "The agent retrieves scoped customer memory and eligible actions from PostgreSQL, then proposes a next step with audit-ready context.",
+    matches: [
+      ["0.91", "Open renewal risk", "Customer has two unresolved support cases."],
+      ["0.86", "Eligible loyalty credit", "Offer is available in current region."],
+      ["0.78", "Prior escalation notes", "Preferred contact path and tone."],
+    ],
+    code: `SELECT memory, eligible_action, reason
+FROM customer_agent_context
+WHERE customer_id = :customer_id
+ORDER BY relevance_embedding <=> :goal_embedding
+LIMIT 5;`,
+  },
+};
+
 function attachInteractions(route) {
   if (route === "live") {
     initLiveLab();
@@ -779,6 +918,8 @@ function attachInteractions(route) {
   if (route !== "ai") {
     return;
   }
+
+  initAiPatternDemo();
 
   const data = {
     support: [
@@ -827,6 +968,59 @@ function attachInteractions(route) {
   });
 
   draw("support");
+}
+
+function initAiPatternDemo() {
+  const demo = document.querySelector("#ai-pattern-demo");
+  const code = document.querySelector("#ai-pattern-code");
+  const codeTitle = document.querySelector("#ai-pattern-code-title");
+  const buttons = document.querySelectorAll("[data-ai-pattern]");
+
+  if (!demo || !code || !codeTitle) {
+    return;
+  }
+
+  function draw(pattern) {
+    const data = aiPatternData[pattern] || aiPatternData.semantic;
+    demo.innerHTML = `
+      <div class="ai-demo-heading">
+        <p class="eyebrow">Simulated customer moment</p>
+        <h3>${data.label}</h3>
+        <p>${data.prompt}</p>
+      </div>
+      <div class="rank-list ai-match-list">
+        ${data.matches
+          .map(
+            ([score, titleText, copy]) => `
+              <article class="rank-item">
+                <span class="score">${score}</span>
+                <div>
+                  <p><strong>${titleText}</strong></p>
+                  <span>${copy}</span>
+                </div>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+      <article class="ai-why">
+        <strong>Why PostgreSQL matters</strong>
+        <p>${data.why}</p>
+      </article>
+    `;
+    codeTitle.textContent = data.label;
+    code.textContent = data.code;
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      buttons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      draw(button.dataset.aiPattern);
+    });
+  });
+
+  draw("semantic");
 }
 
 function initLiveLab() {
