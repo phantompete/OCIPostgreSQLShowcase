@@ -4,6 +4,8 @@ const warmStandbySource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/cross-region-replication.htm";
 const backupSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/backups.htm";
+const pointInTimeRecoverySource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/point-time-recovery.htm";
 const apiBase = window.location.protocol === "file:" ? "http://localhost:8787" : "";
 
 const pageData = {
@@ -44,22 +46,26 @@ const pageData = {
   },
   dr: {
     title: "Disaster recovery",
-    eyebrow: "Backup, restore, warm standby",
+    eyebrow: "Backup, point-in-time recovery, warm standby",
     nav: "DR",
     icon: "cloud-cog",
     pill: "Business continuity",
-    heroTitle: "Show a practical recovery story, not just a backup checkbox.",
+    heroTitle: "Make recovery readiness operational, not theoretical.",
     summary:
-      "Position OCI PostgreSQL DR as two complementary patterns: backup and restore for durable recovery points, and warm standby replication for lower recovery time across regions.",
+      "Recovery choices determine potential data loss, service restoration effort, and how confidently teams respond to outages or operational mistakes.",
     help: [
-      ["Backup and restore", "OCI Database with PostgreSQL backups can be manual or scheduled, stored remotely, copied to another region, and used to provision a new database system when the primary is unavailable."],
-      ["Warm standby", "Replication with Warm Standby maintains a continuously updated standby database system. The primary streams write-ahead logs to the standby, which stays read-only until promotion or switchover."],
-      ["RPO controls", "RPO enforcement tracks replication lag. When enabled, OCI can temporarily switch the primary to read-only mode if lag exceeds the configured threshold, allowing the standby to catch up."],
-      ["Operational nuance", "Automatic failover is not supported for warm standby. Disaster recovery is performed through manual promotion, conversion, or switchover workflows."],
+      ["Backup copies", "OCI Database with PostgreSQL backups can be manual or scheduled, stored remotely, copied to another region, and used to provision a new database system when the primary is unavailable."],
+      ["Point-in-time recovery", "Point-in-time recovery retains WAL and periodic backups so OCI can create a new database system at a chosen timestamp within the active recovery window. It is useful for accidental deletion, incorrect deployments, and logical corruption; the original system remains unchanged."],
+      ["RPO and RTO", "RPO is the acceptable amount of data loss; RTO is the acceptable time to restore service. Backup RPO depends on the backup schedule, while Warm Standby can bound RPO when enforcement is enabled."],
+      ["Planning targets", "The RPO and RTO values shown in this demo are illustrative planning targets, not OCI service guarantees. Validate them against database size, network readiness, application cutover, and a tested runbook."],
+      ["Warm standby roles", "Warm Standby maintains a read/write primary and a continuously updated read-only standby. The primary streams write-ahead logs to the standby until an operator promotes, converts, or switches over."],
+      ["RPO enforcement", "This Warm Standby protection control can switch the primary to read-only when replication lag exceeds the selected RPO, constraining potential data loss while also constraining writes. OCI supports 5 minutes to 3 hours; the default threshold is 5 minutes."],
+      ["Manual failover", "OCI does not provide automatic failover for Warm Standby. An operator must perform the DR promotion, conversion, or switchover workflow and redirect application traffic."],
     ],
     references: [
       ["Warm Standby replication", warmStandbySource],
       ["Database system backups", backupSource],
+      ["Point-in-time recovery", pointInTimeRecoverySource],
     ],
     render: renderDR,
   },
@@ -69,9 +75,9 @@ const pageData = {
     nav: "AI Matching",
     icon: "sparkles",
     pill: "Semantic experiences",
-    heroTitle: "Use PostgreSQL as the relevance layer for AI-powered customer journeys.",
+    heroTitle: "Make AI answers relevant and governed.",
     summary:
-      "Blend vector similarity with fuzzy matching to retrieve the right product, policy, article, or next-best action from operational data.",
+      "Keeping retrieval beside operational data improves answer relevance, preserves governance, and gives customers more useful next steps.",
     help: [
       ["pgvector", "Adds a vector type and similarity operators, so embeddings can live beside customer, product, and transaction records."],
       ["pg_trgm", "Provides trigram matching and indexes that rescue misspellings, partial names, and imperfect customer-entered text."],
@@ -89,7 +95,7 @@ const pageData = {
     pill: "Operate with evidence",
     heroTitle: "Move from reactive tuning to measurable workload health.",
     summary:
-      "Expose query cost, cache pressure, table bloat, and repack impact in one executive-friendly view for performance reviews.",
+      "Evidence-led workload visibility focuses investment on the query, cache, and bloat issues that most affect customer experience and cost.",
     help: [
       ["pg_stat_statements", "Collects query-level performance statistics that reveal where the workload is actually spending time."],
       ["pg_repack", "Compacts tables and rebuilds indexes online, helping reclaim bloat and improve access paths with less disruption."],
@@ -106,7 +112,7 @@ const pageData = {
     pill: "Spatial products",
     heroTitle: "Add geography to customer, asset, and service workflows.",
     summary:
-      "Demonstrate catchment analysis, routing, nearest-resource lookup, and service coverage without sending spatial data to a separate engine.",
+      "Location-aware decisions enable faster dispatch, stronger coverage, and more confident service and site planning from the data teams already manage.",
     help: [
       ["PostGIS", "Adds geometry and geography types, spatial indexes, and functions such as distance, intersection, containment, and routing-adjacent analysis."],
       ["OCI note", "Oracle's supported extension list notes that PostGIS-related extensions are enabled only in the OC1 realm."],
@@ -120,9 +126,9 @@ const pageData = {
     nav: "Automation",
     icon: "calendar-clock",
     pill: "Data lifecycle",
-    heroTitle: "Keep operational data tidy while the application stays online.",
+    heroTitle: "Keep data healthy without downtime.",
     summary:
-      "Use scheduled jobs and partition automation to handle retention, rollups, vacuum-friendly windows, and recurring maintenance.",
+      "Automated lifecycle work protects performance and controls data growth without pulling teams away from customer-facing product work.",
     help: [
       ["pg_cron", "Schedules SQL jobs from inside PostgreSQL, including rollups, refreshes, retention policies, and operational checks."],
       ["pg_partman", "Automates time-based and serial-based partition management so high-volume tables stay predictable as they grow."],
@@ -136,9 +142,9 @@ const pageData = {
     nav: "Trust",
     icon: "shield-check",
     pill: "Governed sharing",
-    heroTitle: "Package governed data access as a product, not a one-off extract.",
+    heroTitle: "Make governed data safely reusable.",
     summary:
-      "Show audit-ready access, encrypted values, and federated reads that help teams build compliant cross-domain services.",
+      "Auditable access, protected values, and controlled federation help teams share data faster without weakening compliance.",
     help: [
       ["pgaudit", "Produces detailed audit logs for database activity, supporting accountability and regulated access reviews."],
       ["pgcrypto", "Adds cryptographic functions for hashing, random values, and encryption workflows handled close to the data."],
@@ -249,107 +255,67 @@ function renderOverview() {
   `;
 }
 
+const drPatternData = {
+  backup: {
+    label: "Backup & Restore", title: "Recover from a valid backup copy",
+    copy: "Keep OCI-managed backups in the primary region, copy them to the recovery region, and provision a replacement database system when recovery is needed.",
+    indicators: [["RPO target", "24 hours with daily backups", "amber"], ["RTO target", "4–8 hours", "amber"], ["Recovery action", "Provision replacement database", "red"]],
+    runbook: [["01", "Select a valid recovery point", "Choose the backup copy that meets the recovery objective.", "warn"], ["02", "Provision in the recovery region", "Create a replacement database system from the copied backup.", "warn"], ["03", "Redirect application traffic", "Point the application to the recovered database endpoint.", "hot"], ["04", "Validate and re-establish protection", "Confirm service and restore backup protection for the new primary.", "ok"]],
+  },
+  pitr: {
+    label: "Point-in-Time Recovery", title: "Recover to just before an unwanted change",
+    copy: "With point-in-time recovery enabled, OCI retains WAL and periodic backups. Choose a timestamp in the active recovery window to create a new database system at that exact point while the original system remains unchanged.",
+    indicators: [["RPO target", "15 minutes", "teal"], ["RTO target", "1–3 hours", "amber"], ["Recovery point", "Chosen time in active window", "teal"]],
+    runbook: [["01", "Confirm the recovery window", "Verify point-in-time recovery is active and the desired time is within the configured restore days.", "warn"], ["02", "Choose a timestamp", "Select a point just before the accidental deletion, deployment, or corruption.", "warn"], ["03", "Create and validate the new database", "Provision the point-in-time database system and confirm its state.", "hot"], ["04", "Redirect traffic and protect again", "Cut the application over when validated, then confirm the new system's recovery policy.", "ok"]],
+  },
+  warm: {
+    label: "Warm Standby", title: "Keep a read-only database ready for DR action",
+    copy: "The primary continuously streams WAL to a read-only standby in another region. OCI requires a manual conversion or promotion and application cutover; it does not provide automatic failover.",
+    indicators: [["RPO target", "5 minutes, enforced", "teal"], ["RTO target", "30–60 minutes, manual", "amber"], ["Standby role", "Read-only until promotion", "teal"]],
+    runbook: [["01", "Detect the outage", "Confirm the primary region cannot serve application traffic.", "hot"], ["02", "Convert or promote standby", "Manually make the recovery-region database the active system.", "warn"], ["03", "Redirect application traffic", "Move the application to the new primary endpoint and validate service.", "hot"], ["04", "Rebuild protection", "Rebuild the original region as standby; optionally switch back when ready.", "ok"]],
+  },
+};
+
 function renderDR() {
-  const options = [
-    ["Backup copies", "Manual or scheduled backups can be copied to another subscribed region and used to provision a replacement database system.", "Restore point"],
-    ["Warm standby", "A standby database in another region continuously receives WAL from the primary and remains read-only until DR action.", "Lower RTO"],
-    ["RPO enforcement", "Replication lag can be monitored and bounded. If enforcement is enabled and lag exceeds threshold, the primary can pause writes by switching read-only.", "Data guardrail"],
-  ];
-
   return `
-    <div class="grid two-col dr-layout">
-      <section class="scenario-panel dr-visual-panel">
-        <div class="dr-stage" aria-label="Primary and warm standby database replication">
-          <div class="dr-region primary-region">
-            <span class="region-label">Primary region</span>
-            <div class="dr-database active">
-              <span></span>
-              <strong>RW</strong>
-            </div>
-            <small>Read/write endpoint</small>
-          </div>
-          <div class="replication-lane">
-            <span class="wal-line"></span>
-            <span class="wal-pulse pulse-one"></span>
-            <span class="wal-pulse pulse-two"></span>
-            <span class="wal-pulse pulse-three"></span>
-            <p>WAL stream</p>
-          </div>
-          <div class="dr-region standby-region">
-            <span class="region-label">Replica region</span>
-            <div class="dr-database standby">
-              <span></span>
-              <strong>RO</strong>
-            </div>
-            <small>Warm standby</small>
-          </div>
-          <div class="backup-vault">
-            <i data-lucide="archive-restore" aria-hidden="true"></i>
-            <span>Backup copy</span>
-          </div>
-        </div>
-      </section>
-      <section class="chart-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">DR posture</p>
-            <h3>Two recovery motions</h3>
-          </div>
-        </div>
-        <div class="mini-stack">
-          ${mini("Backup and restore", "Durable recovery points for data-loss events, regional copy, and new DB system provisioning.", "RPO point")}
-          ${mini("Warm standby DR", "Continuously updated replica database system for business continuity and faster regional recovery.", "RTO focus")}
-          ${mini("Manual control", "Promotion, conversion, and switchover keep DR execution explicit and auditable.", "Runbook")}
-        </div>
-      </section>
-    </div>
-
-    <div class="grid three-col dr-option-grid">
-      ${options
-        .map(
-          ([heading, copy, badge]) => `
-            <article class="card dr-card">
-              ${icon(heading === "Backup copies" ? "archive-restore" : heading === "Warm standby" ? "repeat-2" : "activity", heading === "Warm standby" ? "teal" : heading === "RPO enforcement" ? "amber" : "red")}
-              <h3>${heading}</h3>
-              <p>${copy}</p>
-              <div class="tag-row"><span class="tag">${badge}</span></div>
-            </article>
-          `,
-        )
-        .join("")}
-    </div>
-
-    <div class="grid two-col">
-      <section class="scenario-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Failover storyline</p>
-            <h3>Warm standby recovery path</h3>
-          </div>
-        </div>
-        <div class="timeline">
-          ${drEvent("01", "Detect regional outage", "Primary region cannot serve application traffic.", "hot")}
-          ${drEvent("02", "Promote or convert standby", "Replica region continues database activity after DR action.", "warn")}
-          ${drEvent("03", "Reverse protection", "When the original region recovers, convert it to warm standby behind the new primary.", "ok")}
-          ${drEvent("04", "Switchover home", "Use switchover to return to the original primary region when ready.", "ok")}
-        </div>
-      </section>
-      <section class="code-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Design cue</p>
-            <h3>What to explain to customers</h3>
-          </div>
-        </div>
-        <pre><code>DR strategy =
-  scheduled backups
-  + cross-region backup copies
-  + warm standby replication
-  + tested promotion / switchover runbook
-  + RPO lag monitoring</code></pre>
-      </section>
-    </div>
+    <section class="scenario-panel dr-playbook">
+      <div class="panel-heading dr-playbook-heading"><div><p class="eyebrow">DR playbook</p><h3>Choose the recovery approach</h3></div>
+        <div class="segmented" role="tablist" aria-label="Disaster recovery approaches"><button class="chip" type="button" role="tab" aria-selected="false" data-dr-pattern="backup">Backup &amp; Restore</button><button class="chip" type="button" role="tab" aria-selected="false" data-dr-pattern="pitr">Point-in-Time Recovery</button><button class="chip active" type="button" role="tab" aria-selected="true" data-dr-pattern="warm">Warm Standby</button></div>
+      </div>
+    </section>
+    <div id="dr-pattern-demo"></div>
+    <section class="scenario-panel dr-comparison" aria-labelledby="dr-comparison-title"><div class="panel-heading"><div><p class="eyebrow">At a glance</p><h3 id="dr-comparison-title">Recovery comparison</h3></div></div><p class="dr-pattern-copy">Illustrative planning targets, not OCI guarantees. Validate against database size, network readiness, and a tested application cutover.</p>
+      <div class="dr-comparison-scroll"><table><thead><tr><th>Recovery option</th><th>Best fit</th><th>RPO target</th><th>RTO target</th><th>Operator runbook</th></tr></thead><tbody>
+        <tr><th>Backup &amp; Restore</th><td>Durable recovery points and regional recovery</td><td>24 hours with daily backups</td><td>4–8 hours</td><td>Restore, cut over traffic, validate, protect again</td></tr>
+        <tr><th>Point-in-Time Recovery</th><td>Accidental deletion, bad deployments, or logical corruption</td><td>15 minutes</td><td>1–3 hours</td><td>Select timestamp, create new database, validate, cut over</td></tr>
+        <tr><th>Warm Standby</th><td>Regional continuity with a ready standby</td><td>5 minutes, enforced</td><td>30–60 minutes, manual</td><td>Promote or convert, cut over traffic, rebuild standby</td></tr>
+      </tbody></table></div>
+    </section>
   `;
+}
+
+function renderDRPattern(pattern) {
+  const data = drPatternData[pattern] || drPatternData.warm;
+  const diagram = pattern === "backup"
+    ? `<div class="dr-diagram backup-diagram" aria-label="Backup and restore flow from primary database through OCI-managed and cross-region backups to a replacement database">${drDiagramNode("database", "Primary database", "Read/write", "primary")}${drDiagramArrow("Backup")}${drDiagramNode("archive-restore", "OCI-managed backup", "Recovery point", "backup")}${drDiagramArrow("Cross-region copy")}${drDiagramNode("copy", "Recovery-region copy", "Available for restore", "backup")}${drDiagramArrow("Provision")}${drDiagramNode("database-backup", "Replacement database", "Recovery region", "recovery")}</div>`
+    : pattern === "pitr"
+      ? `<div class="dr-diagram pitr-diagram" aria-label="Point-in-time recovery flow from the source database through retained WAL and backups to a selected timestamp and a new database system">${drDiagramNode("database", "Source database", "Current state remains", "primary")}${drDiagramArrow("Retain WAL")}${drDiagramNode("history", "WAL and backups", "Active recovery window", "backup")}${drDiagramArrow("Select time")}${drDiagramNode("clock-3", "Chosen timestamp", "Just before the change", "recovery")}${drDiagramArrow("Create")}${drDiagramNode("database-backup", "New database", "Validate and cut over", "recovery")}</div>`
+      : `<div class="dr-diagram warm-diagram" aria-label="Read write primary streaming WAL to a read only warm standby"><div class="dr-region-card primary"><span class="region-label">Primary region</span><i data-lucide="database" aria-hidden="true"></i><strong>OCI PostgreSQL</strong><small>Read/write primary</small><b>RW</b></div><div class="replication-lane"><span class="wal-line"></span><span class="wal-pulse pulse-one"></span><span class="wal-pulse pulse-two"></span><span class="wal-pulse pulse-three"></span><p>Animated WAL stream</p></div><div class="dr-region-card standby"><span class="region-label">Recovery region</span><i data-lucide="database" aria-hidden="true"></i><strong>OCI PostgreSQL</strong><small>Read-only standby</small><b>RO</b></div></div>`;
+  return `
+    <section class="scenario-panel dr-pattern-panel"><div class="panel-heading"><div><p class="eyebrow">Recovery pattern</p><h3>${data.title}</h3></div><span class="tag">${data.label}</span></div><p class="dr-pattern-copy">${data.copy}</p>${diagram}
+      ${pattern === "warm" ? `<aside class="rpo-control"><i data-lucide="shield-check" aria-hidden="true"></i><div><strong>RPO enforcement is a protection control</strong><p>When enabled, it switches the primary to read-only if lag exceeds the selected RPO, constraining potential data loss and also constraining writes. OCI supports 5 minutes to 3 hours; the default is 5 minutes.</p></div><span class="tag">Enabled · 5 min default</span></aside>` : ""}
+      <div class="dr-indicators">${data.indicators.map(([label, value, tone]) => `<article class="dr-indicator ${tone}"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div>
+    </section>
+    <div class="grid two-col dr-detail-grid"><section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Operator runbook</p><h3>${data.label} recovery steps</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section>
+      <section class="code-panel dr-guidance"><div class="panel-heading"><div><p class="eyebrow">Recovery indicators</p><h3>Illustrative planning targets</h3></div></div><pre><code>${pattern === "backup" ? "Backup & Restore\n\nRPO target: 24 hours\n            (daily backups)\nRTO target: 4–8 hours\nIncludes restore and cutover" : pattern === "pitr" ? "Point-in-Time Recovery\n\nRPO target: 15 minutes\nRTO target: 1–3 hours\nChoose a time inside the window\nCreate, validate, and cut over" : "Warm Standby\n\nRPO target: 5 minutes enforced\nRTO target: 30–60 minutes\nManual promotion and cutover\nFailover: not automatic"}</code></pre></section></div>`;
+}
+
+function drDiagramNode(iconName, titleText, copy, tone) {
+  return `<article class="dr-flow-node ${tone}"><i data-lucide="${iconName}" aria-hidden="true"></i><strong>${titleText}</strong><span>${copy}</span></article>`;
+}
+
+function drDiagramArrow(label) {
+  return `<div class="dr-flow-arrow"><span>${label}</span><i data-lucide="arrow-right" aria-hidden="true"></i></div>`;
 }
 
 function renderLive() {
@@ -565,6 +531,17 @@ ORDER BY embedding <=> :customer_intent
 LIMIT 5;</code></pre>
       </section>
     </div>
+
+    ${tradeoffPanel(
+      [
+        ["Grounded, relevant answers", "Retrieve customer, policy, and product context close to operational data."],
+        ["Resilient intent matching", "Combine semantic and fuzzy retrieval for different wording, typos, and partial terms."],
+      ],
+      [
+        ["Retrieval quality needs stewardship", "Embedding choices and source content need review as products and policies change."],
+        ["Governance still applies", "Results must respect data access boundaries before reaching users or agents."],
+      ],
+    )}
   `;
 }
 
@@ -586,6 +563,29 @@ function aiLane(iconName, titleText, copy, tagText) {
       <p>${copy}</p>
       <div class="tag-row"><span class="tag">${tagText}</span></div>
     </article>
+  `;
+}
+
+function tradeoffPanel(benefits, considerations) {
+  return `
+    <section class="scenario-panel tradeoff-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Decision guide</p>
+          <h3>Benefits and considerations</h3>
+        </div>
+      </div>
+      <div class="grid two-col">
+        <div>
+          <div class="panel-heading"><div><p class="eyebrow">Benefits</p><h3>Why it matters</h3></div></div>
+          <div class="mini-stack">${benefits.map(([titleText, copy]) => mini(titleText, copy, "Benefit")).join("")}</div>
+        </div>
+        <div>
+          <div class="panel-heading"><div><p class="eyebrow">Considerations</p><h3>Plan for the tradeoffs</h3></div></div>
+          <div class="mini-stack">${considerations.map(([titleText, copy]) => mini(titleText, copy, "Consider")).join("")}</div>
+        </div>
+      </div>
+    </section>
   `;
 }
 
@@ -637,6 +637,17 @@ function renderPerformance() {
         </div>
       </section>
     </div>
+
+    ${tradeoffPanel(
+      [
+        ["Focus tuning where impact is highest", "Prioritize work using measured query cost, cache pressure, and bloat signals."],
+        ["Prove the outcome", "Before-and-after evidence connects maintenance work to customer experience and cost."],
+      ],
+      [
+        ["Metrics need context", "Baselines, traffic changes, and workload patterns determine whether a signal needs action."],
+        ["Maintenance needs planning", "Repack and index work still require capacity, timing, and operational validation."],
+      ],
+    )}
   `;
 }
 
@@ -669,6 +680,17 @@ function renderLocation() {
         </div>
       </section>
     </div>
+
+    ${tradeoffPanel(
+      [
+        ["Faster service decisions", "Use proximity and coverage signals to route work and resolve customer needs sooner."],
+        ["Planning based on actual reach", "Model catchments and overlap before committing to new sites or service territories."],
+      ],
+      [
+        ["Spatial data must stay accurate", "Geocoding, boundaries, and source records need stewardship to keep decisions trustworthy."],
+        ["Index and realm fit need validation", "Spatial workloads need appropriate indexes and must fit the OCI realm availability model."],
+      ],
+    )}
   `;
 }
 
@@ -722,6 +744,17 @@ function renderOperations() {
 SELECT partman.run_maintenance_proc();</code></pre>
       </section>
     </div>
+
+    ${tradeoffPanel(
+      [
+        ["Consistent recurring operations", "Automate retention, rollups, and partition creation so critical upkeep is not missed."],
+        ["Predictable growth management", "Keep high-volume data performant as workloads and retention needs expand."],
+      ],
+      [
+        ["Jobs need observability", "Teams need clear status, alerting, and ownership for scheduled database work."],
+        ["Bad automation scales quickly", "Validate retention and maintenance logic carefully before applying it across production data."],
+      ],
+    )}
   `;
 }
 
@@ -756,6 +789,17 @@ function renderTrust() {
         </div>
       </section>
     </div>
+
+    ${tradeoffPanel(
+      [
+        ["Compliance in the serving path", "Audit trails and protected values make governed access part of normal product delivery."],
+        ["Safer data sharing", "Federated reads reduce extract sprawl while keeping valuable data usable across teams."],
+      ],
+      [
+        ["Permissions and keys need governance", "Controls only work when roles, policies, and cryptographic material are actively managed."],
+        ["Federation adds dependencies", "Shared services depend on the availability, performance, and contracts of remote data sources."],
+      ],
+    )}
   `;
 }
 
@@ -915,6 +959,11 @@ function attachInteractions(route) {
     return;
   }
 
+  if (route === "dr") {
+    initDrDemo();
+    return;
+  }
+
   if (route !== "ai") {
     return;
   }
@@ -968,6 +1017,31 @@ function attachInteractions(route) {
   });
 
   draw("support");
+}
+
+function initDrDemo() {
+  const demo = document.querySelector("#dr-pattern-demo");
+  const buttons = document.querySelectorAll("[data-dr-pattern]");
+
+  if (!demo || !buttons.length) {
+    return;
+  }
+
+  function draw(pattern) {
+    buttons.forEach((button) => {
+      const selected = button.dataset.drPattern === pattern;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", String(selected));
+    });
+    demo.innerHTML = renderDRPattern(pattern);
+    refreshIcons();
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => draw(button.dataset.drPattern));
+  });
+
+  draw("warm");
 }
 
 function initAiPatternDemo() {

@@ -1656,3 +1656,298 @@ a {
     animation-duration: 1ms !important;
   }
 }
+
+/* Disaster recovery playbook */
+.dr-playbook,
+.dr-comparison,
+.dr-pattern-panel {
+  margin-bottom: 16px;
+}
+
+.dr-playbook-heading {
+  align-items: center;
+}
+
+.dr-comparison-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.dr-comparison table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  background: #fbfdfc;
+  text-align: left;
+}
+
+.dr-comparison th,
+.dr-comparison td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.dr-comparison thead th,
+.dr-comparison tbody th {
+  color: var(--ink);
+  font-weight: 820;
+}
+
+.dr-comparison tbody tr:last-child th,
+.dr-comparison tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+#dr-pattern-demo {
+  display: grid;
+  gap: 16px;
+}
+
+.dr-pattern-copy {
+  max-width: 78ch;
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.dr-diagram {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(199, 70, 52, 0.13), transparent 27%),
+    radial-gradient(circle at 86% 80%, rgba(5, 122, 117, 0.16), transparent 28%),
+    linear-gradient(145deg, #ffffff, #edf4f2);
+  padding: clamp(18px, 3vw, 30px);
+}
+
+.backup-diagram,
+.pitr-diagram {
+  grid-template-columns: minmax(120px, 1fr) minmax(52px, auto) minmax(120px, 1fr) minmax(52px, auto) minmax(120px, 1fr) minmax(52px, auto) minmax(120px, 1fr);
+}
+
+.dr-flow-node,
+.dr-region-card {
+  position: relative;
+  display: grid;
+  min-height: 158px;
+  align-content: center;
+  justify-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.dr-flow-node svg,
+.dr-region-card > svg {
+  width: 27px;
+  height: 27px;
+}
+
+.dr-flow-node strong,
+.dr-region-card strong {
+  font-size: 0.92rem;
+}
+
+.dr-flow-node span,
+.dr-region-card small {
+  color: var(--muted);
+  font-size: 0.77rem;
+  line-height: 1.35;
+}
+
+.dr-flow-node.primary {
+  border-color: rgba(199, 70, 52, 0.3);
+  color: var(--red);
+}
+
+.dr-flow-node.backup {
+  border-color: rgba(199, 119, 0, 0.3);
+  color: var(--amber);
+}
+
+.dr-flow-node.recovery {
+  border-color: rgba(5, 122, 117, 0.3);
+  color: var(--teal);
+}
+
+.dr-flow-arrow {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--teal);
+}
+
+.dr-flow-arrow span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+.dr-flow-arrow svg {
+  width: 25px;
+  height: 25px;
+}
+
+.warm-diagram {
+  min-height: 280px;
+  grid-template-columns: minmax(155px, 0.85fr) minmax(170px, 1fr) minmax(155px, 0.85fr);
+}
+
+.dr-region-card {
+  min-height: 186px;
+}
+
+.dr-region-card .region-label {
+  position: absolute;
+  top: 10px;
+}
+
+.dr-region-card.primary {
+  border-color: rgba(199, 70, 52, 0.34);
+  color: var(--red);
+}
+
+.dr-region-card.standby {
+  border-color: rgba(5, 122, 117, 0.34);
+  color: var(--teal);
+}
+
+.dr-region-card b {
+  display: grid;
+  width: 34px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  background: currentColor;
+  color: #fff;
+  font-size: 0.73rem;
+}
+
+.warm-diagram .replication-lane {
+  min-height: 160px;
+}
+
+.rpo-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  margin-top: 14px;
+  border: 1px solid rgba(199, 119, 0, 0.3);
+  border-radius: var(--radius);
+  background: var(--amber-soft);
+  padding: 14px;
+}
+
+.rpo-control > svg {
+  width: 21px;
+  height: 21px;
+  color: var(--amber);
+}
+
+.rpo-control strong {
+  display: block;
+  color: var(--ink);
+}
+
+.rpo-control p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.dr-indicators {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dr-indicator {
+  display: grid;
+  gap: 5px;
+  min-height: 80px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfdfc;
+  padding: 12px;
+}
+
+.dr-indicator span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 760;
+}
+
+.dr-indicator strong {
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.dr-indicator.teal { border-color: rgba(5, 122, 117, 0.28); }
+.dr-indicator.amber { border-color: rgba(199, 119, 0, 0.3); }
+.dr-indicator.red { border-color: rgba(199, 70, 52, 0.3); }
+
+@media (max-width: 940px) {
+  .backup-diagram,
+  .pitr-diagram,
+  .warm-diagram {
+    grid-template-columns: 1fr;
+  }
+
+  .backup-diagram .dr-flow-arrow,
+  .pitr-diagram .dr-flow-arrow {
+    min-height: 32px;
+  }
+
+  .backup-diagram .dr-flow-arrow svg,
+  .pitr-diagram .dr-flow-arrow svg {
+    transform: rotate(90deg);
+  }
+
+  .warm-diagram .replication-lane {
+    min-height: 96px;
+    transform: rotate(90deg);
+  }
+
+  .warm-diagram .replication-lane p {
+    transform: rotate(-90deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .dr-playbook-heading,
+  .rpo-control {
+    grid-template-columns: 1fr;
+  }
+
+  .dr-playbook .segmented {
+    width: 100%;
+  }
+
+  .dr-playbook .chip {
+    flex: 1 1 0;
+  }
+
+  .dr-indicators {
+    grid-template-columns: 1fr;
+  }
+
+  .rpo-control .tag {
+    width: fit-content;
+  }
+}
