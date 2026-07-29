@@ -6,6 +6,12 @@ const backupSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/backups.htm";
 const pointInTimeRecoverySource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/point-time-recovery.htm";
+const migrationSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/import-export-migrate.htm";
+const nativeLogicalReplicationSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/storage-best-practices.htm";
+const pglogicalSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/upgrades.htm";
 const apiBase = window.location.protocol === "file:" ? "http://localhost:8787" : "";
 
 const pageData = {
@@ -40,6 +46,7 @@ const pageData = {
     help: [
       ["How live mode works", "The browser calls a local Node API. The API connects to PostgreSQL with DATABASE_URL, runs parameterized read-only showcase queries, and returns sanitized JSON."],
       ["Why not browser-to-database", "Direct database connections from a browser would expose credentials and are not how customer-facing demos should be built."],
+      ["Operational snapshot", "Uptime and connection headroom are current signals. Cache ratio accumulates since statistics reset, and replica replay activity is the most recently replayed transaction, not a guaranteed lag target."],
       ["Setup", "Copy .env.example to .env, set DATABASE_URL, run npm install, optionally run sql/demo_schema.sql, then start the server with npm start."],
     ],
     render: renderLive,
@@ -68,6 +75,31 @@ const pageData = {
       ["Point-in-time recovery", pointInTimeRecoverySource],
     ],
     render: renderDR,
+  },
+  migration: {
+    title: "Migration playbook",
+    eyebrow: "Dump, logical replication, GoldenGate",
+    nav: "Migration",
+    icon: "git-branch",
+    pill: "Move with confidence",
+    heroTitle: "Migrate PostgreSQL workloads to OCI confidently.",
+    summary:
+      "Choose a migration path that balances downtime, transfer time, and operational risk while protecting production workloads.",
+    help: [
+      ["pg_dump and pg_restore", "PostgreSQL client utilities that export and recreate database objects and data. They suit controlled migrations where a planned outage is acceptable."],
+      ["Native logical replication", "Built-in PostgreSQL publication and subscription replication that keeps DML synchronized before a low-downtime cutover. Schema, DDL, and sequence state must be coordinated separately."],
+      ["pglogical", "An OCI-supported extension for advanced replication scopes and topologies. It must be enabled in OCI configuration and still needs active DDL coordination."],
+      ["GoldenGate Initial Load + CDC", "Oracle GoldenGate can load an initial data set and continuously capture and apply source changes until the target catches up for cutover."],
+      ["Cutover validation", "Before redirecting traffic, compare data, verify roles and application connectivity, confirm replication has caught up, and retain a tested rollback path."],
+      ["Source and target readiness", "Check network access, compatible PostgreSQL versions and extensions, role privileges, logical replication settings, WAL capacity, and target sizing before migration."],
+    ],
+    references: [
+      ["OCI PostgreSQL migration guide", migrationSource],
+      ["Native logical replication guidance", nativeLogicalReplicationSource],
+      ["pglogical migration guidance", pglogicalSource],
+      ["Supported OCI PostgreSQL extensions", supportedSource],
+    ],
+    render: renderMigration,
   },
   ai: {
     title: "AI matching",
@@ -318,6 +350,112 @@ function drDiagramArrow(label) {
   return `<div class="dr-flow-arrow"><span>${label}</span><i data-lucide="arrow-right" aria-hidden="true"></i></div>`;
 }
 
+const migrationPatternData = {
+  dump: {
+    label: "pg_dump & restore",
+    title: "Move with a planned outage",
+    copy: "Use PostgreSQL client utilities to export roles, schema, and data, then restore them into OCI Database with PostgreSQL during a controlled migration window.",
+    indicators: [["Illustrative size", "Up to 100 GB", "teal"], ["Downtime posture", "Planned outage", "amber"], ["Migration tool", "pg_dump + pg_restore", "teal"]],
+    runbook: [["01", "Assess compatibility", "Inventory extensions, roles, tablespaces, and the target network path.", "warn"], ["02", "Export roles, schema, and data", "Create reviewed dumps from the source before the migration window.", "warn"], ["03", "Restore and remediate", "Load objects into OCI, resolve privilege or object differences, then refresh statistics.", "hot"], ["04", "Validate and cut over", "Compare data, test the application, then redirect production traffic.", "ok"]],
+    checklist: "pg_dump & restore\n\n[ ] Export global roles separately\n[ ] Review SUPERUSER and tablespace commands\n[ ] Restore schema before data\n[ ] Validate counts and application paths\n[ ] Run VACUUM ANALYZE after load",
+  },
+  native: {
+    label: "Native logical replication",
+    title: "Replicate DML before cutover",
+    copy: "Use PostgreSQL's built-in publication and subscription replication to keep a prepared OCI target synchronized while the source remains active, then complete a low-downtime cutover after the target catches up.",
+    indicators: [["Size guidance", "No fixed size tier", "teal"], ["Downtime posture", "Low cutover downtime", "amber"], ["Migration tool", "PostgreSQL publication + subscription", "teal"]],
+    runbook: [["01", "Prepare source and target", "Confirm compatible versions, networking, logical WAL settings, replication privileges, and WAL/slot capacity.", "warn"], ["02", "Move schema and establish replication", "Restore schema and roles separately, then create the publication and subscription for the required tables.", "warn"], ["03", "Monitor catch-up", "Track replication lag, slot retention, DML errors, data checks, and the application change freeze.", "hot"], ["04", "Freeze writes and cut over", "Stop source writes and DDL changes, let the target catch up, validate sequences, then redirect traffic.", "ok"]],
+    checklist: "Native logical replication\n\n[ ] Enable logical WAL and confirm replication privileges\n[ ] Restore compatible schema and roles before subscribing\n[ ] Plan DDL and sequence synchronization separately\n[ ] Monitor lag and replication slot retention\n[ ] Freeze writes and validate before cutover",
+    pglogicalDecision: true,
+  },
+  goldengate: {
+    label: "GoldenGate Initial Load + CDC",
+    title: "Load at scale, then capture change",
+    copy: "Use Oracle GoldenGate Initial Load plus change data capture to seed a large or complex target and continuously apply source changes until a near-zero-downtime cutover.",
+    indicators: [["Illustrative size", "Over 1 TB or complex", "teal"], ["Downtime posture", "Near-zero cutover downtime", "amber"], ["Migration tool", "GoldenGate Initial Load + CDC", "teal"]],
+    runbook: [["01", "Prepare source and target", "Verify networking, source logical replication settings, migration privileges, target schema, and GoldenGate connections.", "warn"], ["02", "Run Initial Load", "Start the initial load extract and Replicat to populate the OCI target.", "warn"], ["03", "Run CDC and reconcile", "Start change capture, monitor lag, and compare target data before the cutover window.", "hot"], ["04", "Freeze writes and cut over", "Allow CDC to catch up, validate the target, then move application traffic to OCI.", "ok"]],
+    checklist: "GoldenGate Initial Load + CDC\n\n[ ] Create source and target connections\n[ ] Prepare schema and checkpoint table\n[ ] Start Initial Load before CDC Replicat\n[ ] Reconcile counts and change lag\n[ ] Retain rollback and validation runbooks",
+  },
+};
+
+function renderMigration() {
+  return `
+    <section class="scenario-panel migration-playbook">
+      <div class="panel-heading migration-playbook-heading">
+        <div><p class="eyebrow">Migration playbook</p><h3>Choose the migration approach</h3></div>
+        <div class="segmented" role="tablist" aria-label="PostgreSQL migration approaches">
+          <button class="chip active" type="button" role="tab" aria-selected="true" data-migration-pattern="dump">pg_dump &amp; restore</button>
+          <button class="chip" type="button" role="tab" aria-selected="false" data-migration-pattern="native">Native logical replication</button>
+          <button class="chip" type="button" role="tab" aria-selected="false" data-migration-pattern="goldengate">GoldenGate + CDC</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="scenario-panel migration-comparison" aria-labelledby="migration-comparison-title">
+      <div class="panel-heading"><div><p class="eyebrow">At a glance</p><h3 id="migration-comparison-title">Migration method comparison</h3></div></div>
+      <p class="migration-copy">Illustrative selection guidance, not OCI limits or guarantees. Size informs initial-load planning; choose native replication or pglogical by the required replication scope and topology.</p>
+      <div class="migration-comparison-scroll"><table><thead><tr><th>Migration method</th><th>Illustrative size</th><th>Downtime posture</th><th>Best fit</th><th>Operational tradeoff</th></tr></thead><tbody>
+        <tr><th>pg_dump &amp; restore</th><td>Up to 100 GB</td><td>Planned outage</td><td>Simple, controlled moves</td><td>Transfer and restore occur inside the cutover window</td></tr>
+        <tr><th>Native logical replication</th><td>No fixed size tier</td><td>Low cutover downtime</td><td>Standard one-way PostgreSQL migrations</td><td>Schema, DDL, and sequences are moved and verified separately</td></tr>
+        <tr><th>GoldenGate Initial Load + CDC</th><td>Over 1 TB or complex</td><td>Near-zero cutover downtime</td><td>Large or complex migrations with continuous change capture</td><td>Highest operational setup and reconciliation effort</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <div id="migration-pattern-demo"></div>
+
+    <section class="scenario-panel migration-watchouts">
+      <div class="panel-heading"><div><p class="eyebrow">Migration watch-outs</p><h3>Resolve these before cutover</h3></div></div>
+      <div class="grid two-col migration-watchout-grid">
+        ${mini("Extensions and versions", "Verify compatible PostgreSQL versions and extensions. Enable pglogical in OCI configuration only when its advanced capabilities are needed.", "Compatibility")}
+        ${mini("Roles and tablespaces", "Review role privileges, SUPERUSER commands, password handling, and OCI in-place tablespace constraints.", "Access")}
+        ${mini("Replication readiness", "Confirm logical WAL settings, replication privileges, slots, storage capacity, and lag monitoring on the source.", "Continuity")}
+        ${mini("Schema and application cutover", "Native replication does not carry schema, DDL, or sequence state; validate those alongside triggers, networking, application paths, and rollback steps.", "Validation")}
+      </div>
+    </section>
+  `;
+}
+
+function renderMigrationPattern(pattern) {
+  const data = migrationPatternData[pattern] || migrationPatternData.dump;
+  const diagram = renderMigrationDiagram(pattern);
+  return `
+    <section class="scenario-panel migration-pattern-panel">
+      <div class="panel-heading"><div><p class="eyebrow">Migration profile</p><h3>${data.title}</h3></div><span class="tag">${data.label}</span></div>
+      <p class="migration-copy">${data.copy}</p>${diagram}
+      <div class="migration-indicators">${data.indicators.map(([label, value, tone]) => `<article class="migration-indicator ${tone}"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div>
+    </section>
+    <div class="grid two-col migration-detail-grid">
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Sample runbook</p><h3>${data.label} migration steps</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section>
+      <section class="code-panel migration-guidance"><div class="panel-heading"><div><p class="eyebrow">Cutover checklist</p><h3>Validate before traffic moves</h3></div></div><pre><code>${data.checklist}</code></pre></section>
+    </div>
+    ${data.pglogicalDecision ? `<section class="scenario-panel migration-advanced-option"><div class="panel-heading"><div><p class="eyebrow">Advanced alternative</p><h3>When pglogical is worth it</h3></div><span class="tag">Use intentionally</span></div><div class="grid two-col migration-decision-grid">${mini("Choose pglogical for", "Selective table, row, or column replication; advanced multi-provider or bidirectional topologies; conflict-handling needs; or a tested cross-version migration workflow.", "Capability")}${mini("Accept the tradeoff", "Enable and operate the OCI extension, manage added replication complexity, and continue to coordinate and validate DDL changes before cutover.", "Operations")}</div></section>` : ""}
+  `;
+}
+
+function migrationDiagramNode(iconName, titleText, copy, tone, badge) {
+  return `<article class="migration-diagram-node ${tone}"><span class="migration-node-badge">${badge}</span><i data-lucide="${iconName}" aria-hidden="true"></i><strong>${titleText}</strong><span>${copy}</span></article>`;
+}
+
+function migrationFlowTokens() {
+  return `<span class="migration-flow-token one"></span><span class="migration-flow-token two"></span><span class="migration-flow-token three"></span><i data-lucide="arrow-right" aria-hidden="true"></i>`;
+}
+
+function migrationDiagramLink(label) {
+  return `<div class="migration-flow-link"><div class="migration-flow-track" aria-hidden="true">${migrationFlowTokens()}</div><small>${label}</small></div>`;
+}
+
+function renderMigrationDiagram(pattern) {
+  if (pattern === "native") {
+    return `<div class="migration-diagram migration-native-diagram" role="img" aria-label="Source PostgreSQL publication streaming DML changes to an OCI PostgreSQL subscription">${migrationDiagramNode("database", "Source PostgreSQL", "Publication · DML changes", "source", "PUB")}<div class="migration-replication-lane"><span class="migration-lane-label">Publication to subscription</span><div class="migration-flow-track" aria-hidden="true">${migrationFlowTokens()}</div><p>Animated DML stream</p></div>${migrationDiagramNode("database", "OCI PostgreSQL", "Subscription · ready to cut over", "target", "SUB")}</div>`;
+  }
+
+  if (pattern === "goldengate") {
+    return `<div class="migration-diagram migration-goldengate-diagram" role="img" aria-label="Source PostgreSQL loading OCI PostgreSQL through Oracle GoldenGate initial load and continuous change data capture">${migrationDiagramNode("database", "Source PostgreSQL", "Production writes continue", "source", "SRC")}<div class="migration-goldengate-lane"><strong>GoldenGate</strong><div class="migration-goldengate-track initial"><span>Initial Load</span><div class="migration-flow-track" aria-hidden="true">${migrationFlowTokens()}</div></div><div class="migration-goldengate-track cdc"><span>CDC</span><div class="migration-flow-track" aria-hidden="true">${migrationFlowTokens()}</div></div></div>${migrationDiagramNode("database", "OCI PostgreSQL", "Initial load + changes applied", "target", "OCI")}</div>`;
+  }
+
+  return `<div class="migration-diagram migration-dump-diagram" role="img" aria-label="Source PostgreSQL exporting a dump archive that is transferred and restored into OCI PostgreSQL">${migrationDiagramNode("database", "Source PostgreSQL", "Roles, schema, and data", "source", "SRC")}${migrationDiagramLink("Export")}${migrationDiagramNode("file-archive", "Dump archive", "Reviewed migration package", "package", "DUMP")}${migrationDiagramLink("Transfer")}${migrationDiagramNode("database-backup", "OCI PostgreSQL", "Restore and validate", "target", "OCI")}</div>`;
+}
+
 function renderLive() {
   return `
     <div class="live-stack">
@@ -332,7 +470,15 @@ function renderLive() {
         <div class="live-status-grid" id="live-status">
           ${loadingCard("API status")}
           ${loadingCard("Database")}
+          ${loadingCard("Write role")}
           ${loadingCard("Server version")}
+          ${loadingCard("Connected user")}
+        </div>
+        <div class="live-health-snapshot">
+          <div class="live-health-heading"><p class="eyebrow">Operational snapshot</p><span>Read-only database metrics</span></div>
+          <div class="live-health-grid" id="live-health-snapshot">
+            ${healthSnapshotLoadingCards()}
+          </div>
         </div>
       </section>
 
@@ -964,6 +1110,11 @@ function attachInteractions(route) {
     return;
   }
 
+  if (route === "migration") {
+    initMigrationDemo();
+    return;
+  }
+
   if (route !== "ai") {
     return;
   }
@@ -1042,6 +1193,31 @@ function initDrDemo() {
   });
 
   draw("warm");
+}
+
+function initMigrationDemo() {
+  const demo = document.querySelector("#migration-pattern-demo");
+  const buttons = document.querySelectorAll("[data-migration-pattern]");
+
+  if (!demo || !buttons.length) {
+    return;
+  }
+
+  function draw(pattern) {
+    buttons.forEach((button) => {
+      const selected = button.dataset.migrationPattern === pattern;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", String(selected));
+    });
+    demo.innerHTML = renderMigrationPattern(pattern);
+    refreshIcons();
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => draw(button.dataset.migrationPattern));
+  });
+
+  draw("dump");
 }
 
 function initAiPatternDemo() {
@@ -1129,6 +1305,7 @@ async function loadLiveLab() {
 
 async function loadHealth() {
   const target = document.querySelector("#live-status");
+  const snapshot = document.querySelector("#live-health-snapshot");
   if (!target) {
     return;
   }
@@ -1136,8 +1313,13 @@ async function loadHealth() {
   target.innerHTML = `
     ${loadingCard("API status")}
     ${loadingCard("Database")}
+    ${loadingCard("Write role")}
     ${loadingCard("Server version")}
+    ${loadingCard("Connected user")}
   `;
+  if (snapshot) {
+    snapshot.innerHTML = healthSnapshotLoadingCards();
+  }
 
   try {
     const data = await apiGet("/api/health");
@@ -1145,23 +1327,28 @@ async function loadHealth() {
       target.innerHTML = `
         ${statusCard("API reachable", "Ready", "ok")}
         ${statusCard("Database", "Not connected", "warn")}
+        ${statusCard("Write role", "Unavailable", "warn")}
         ${statusCard("Next step", data.error || "Configure DATABASE_URL", "hot")}
       `;
+      renderHealthSnapshotUnavailable(snapshot, "Connect a database to read health metrics.");
       return;
     }
 
     target.innerHTML = `
       ${statusCard("API reachable", "Connected", "ok")}
       ${statusCard("Database", data.database || "PostgreSQL", "ok")}
+      ${statusCard("Write role", data.is_in_recovery ? "Read-only replica" : "Writable primary", data.is_in_recovery ? "warn" : "ok")}
       ${statusCard("Server version", data.server_version || "Unknown", "ok")}
       ${statusCard("Connected user", data.user_name || "Unknown", "ok")}
     `;
+    renderHealthSnapshot(snapshot, data);
   } catch {
     target.innerHTML = `
       ${statusCard("API status", "Offline", "hot")}
       ${statusCard("Start server", "npm start", "warn")}
       ${statusCard("Default URL", "http://localhost:8787", "warn")}
     `;
+    renderHealthSnapshotUnavailable(snapshot, "Start the local API to read health metrics.");
   }
 }
 
@@ -1172,6 +1359,84 @@ function statusCard(label, value, state) {
       <strong>${escapeHtml(value)}</strong>
     </article>
   `;
+}
+
+function healthSnapshotCard(label, value, detail) {
+  return `<article class="live-status-card live-health-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></article>`;
+}
+
+function healthSnapshotLoadingCards() {
+  return ["Uptime", "Connection headroom", "Cache hit ratio", "Last replay activity"]
+    .map((label) => healthSnapshotCard(label, "Checking", "Reading database metrics"))
+    .join("");
+}
+
+function renderHealthSnapshotUnavailable(snapshot, detail) {
+  if (!snapshot) {
+    return;
+  }
+  snapshot.innerHTML = ["Uptime", "Connection headroom", "Cache hit ratio", "Last replay activity"]
+    .map((label) => healthSnapshotCard(label, "Unavailable", detail))
+    .join("");
+}
+
+function renderHealthSnapshot(snapshot, data) {
+  if (!snapshot) {
+    return;
+  }
+
+  const cacheValue = data.cache_hit_pct == null ? "No I/O samples" : `${data.cache_hit_pct}%`;
+  const cacheDetail = data.cache_hit_pct == null
+    ? "No reads recorded since statistics reset"
+    : `Since stats reset ${formatHealthTime(data.stats_reset_at)}`;
+  const replayValue = !data.is_in_recovery
+    ? "Not applicable"
+    : data.last_replay_at
+      ? `${formatHealthAge(data.last_replay_at, data.checked_at)} ago`
+      : "No replay observed";
+  const replayDetail = !data.is_in_recovery
+    ? "Connected to a primary"
+    : data.last_replay_at
+      ? "Most recently replayed transaction"
+      : "No transaction replay timestamp returned";
+
+  snapshot.innerHTML = [
+    healthSnapshotCard("Uptime", formatHealthDuration(data.uptime_seconds), `Started ${formatHealthTime(data.started_at)}`),
+    healthSnapshotCard("Connection headroom", `${data.active_connections ?? "?"} / ${data.max_connections ?? "?"}`, "Active connections / configured limit"),
+    healthSnapshotCard("Cache hit ratio", cacheValue, cacheDetail),
+    healthSnapshotCard("Last replay activity", replayValue, replayDetail),
+  ].join("");
+}
+
+function formatHealthDuration(value) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return "Unknown";
+  }
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days) return `${days}d ${hours}h`;
+  if (hours) return `${hours}h ${minutes}m`;
+  if (minutes) return `${minutes}m`;
+  return `${Math.floor(seconds)}s`;
+}
+
+function formatHealthAge(value, reference) {
+  const eventTime = new Date(value).getTime();
+  const referenceTime = new Date(reference).getTime();
+  if (!Number.isFinite(eventTime) || !Number.isFinite(referenceTime)) {
+    return "Unknown";
+  }
+  return formatHealthDuration(Math.max(0, Math.floor((referenceTime - eventTime) / 1000)));
+}
+
+function formatHealthTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "an unknown time";
+  }
+  return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 async function loadExtensions() {

@@ -1187,8 +1187,47 @@ a {
 
 .live-status-grid {
   display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.live-health-snapshot {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.live-health-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.live-health-heading .eyebrow {
+  margin: 0;
+}
+
+.live-health-heading > span,
+.live-health-card small {
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.35;
+}
+
+.live-health-grid {
+  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+}
+
+.live-health-card {
+  min-height: 106px;
+}
+
+.live-health-card small {
+  display: block;
 }
 
 .live-status-card {
@@ -1518,6 +1557,7 @@ a {
   }
 
   .live-status-grid,
+  .live-health-grid,
   .extension-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1627,10 +1667,16 @@ a {
   }
 
   .live-status-grid,
+  .live-health-grid,
   .extension-grid,
   .live-form,
   .live-form.stacked {
     grid-template-columns: 1fr;
+  }
+
+  .live-health-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .ai-flow {
@@ -1950,4 +1996,356 @@ a {
   .rpo-control .tag {
     width: fit-content;
   }
+}
+
+/* Migration playbook */
+.migration-playbook,
+.migration-comparison,
+.migration-pattern-panel,
+.migration-advanced-option,
+.migration-watchouts {
+  margin-bottom: 16px;
+}
+
+.migration-playbook-heading {
+  align-items: center;
+}
+
+.migration-comparison-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.migration-comparison table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: collapse;
+  background: #fbfdfc;
+  text-align: left;
+}
+
+.migration-comparison th,
+.migration-comparison td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.migration-comparison thead th,
+.migration-comparison tbody th {
+  color: var(--ink);
+  font-weight: 820;
+}
+
+.migration-comparison tbody tr:last-child th,
+.migration-comparison tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+#migration-pattern-demo {
+  display: grid;
+  gap: 16px;
+}
+
+.migration-copy {
+  max-width: 78ch;
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.migration-diagram {
+  display: grid;
+  align-items: stretch;
+  gap: 10px;
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, #f8fcfb, #ffffff);
+  padding: 14px;
+}
+
+.migration-dump-diagram {
+  grid-template-columns: minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(130px, 1fr);
+}
+
+.migration-native-diagram,
+.migration-goldengate-diagram {
+  grid-template-columns: minmax(150px, 0.9fr) minmax(190px, 1fr) minmax(150px, 0.9fr);
+}
+
+.migration-diagram-node {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 7px;
+  min-height: 150px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) - 2px);
+  background: #fff;
+  padding: 16px 12px 12px;
+  text-align: center;
+}
+
+.migration-diagram-node > svg {
+  width: 28px;
+  height: 28px;
+}
+
+.migration-diagram-node strong {
+  color: var(--ink);
+  font-size: 0.91rem;
+}
+
+.migration-diagram-node > span:last-child {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.migration-diagram-node.source {
+  border-color: rgba(199, 70, 52, 0.3);
+  color: var(--red);
+}
+
+.migration-diagram-node.source .migration-node-badge {
+  background: var(--red);
+}
+
+.migration-diagram-node.package {
+  border-color: rgba(199, 119, 0, 0.32);
+  color: var(--amber);
+}
+
+.migration-diagram-node.package .migration-node-badge {
+  background: var(--amber);
+}
+
+.migration-diagram-node.target {
+  border-color: rgba(5, 122, 117, 0.32);
+  color: var(--teal);
+}
+
+.migration-diagram-node.target .migration-node-badge {
+  background: var(--teal);
+}
+
+.migration-node-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border-radius: 999px;
+  color: #fff;
+  padding: 3px 7px;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+}
+
+.migration-flow-link {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.migration-flow-link small,
+.migration-lane-label,
+.migration-replication-lane p {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 760;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.migration-flow-track {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  overflow: hidden;
+}
+
+.migration-flow-track::before {
+  position: absolute;
+  top: 9px;
+  right: 8px;
+  left: 1px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(5, 122, 117, 0.36);
+  content: "";
+}
+
+.migration-flow-track > svg {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--teal);
+}
+
+.migration-flow-token {
+  position: absolute;
+  top: 5px;
+  left: 3%;
+  z-index: 1;
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 2px 8px rgba(5, 122, 117, 0.35);
+  animation: migrationFlow 3s ease-in-out infinite;
+}
+
+.migration-flow-token.two { animation-delay: 1s; }
+.migration-flow-token.three { animation-delay: 2s; }
+
+.migration-replication-lane,
+.migration-goldengate-lane {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  min-height: 150px;
+  border: 1px dashed rgba(5, 122, 117, 0.34);
+  border-radius: calc(var(--radius) - 2px);
+  background: rgba(5, 122, 117, 0.045);
+  padding: 14px;
+}
+
+.migration-replication-lane p {
+  margin: 0;
+}
+
+.migration-goldengate-lane > strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.migration-goldengate-track {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.migration-goldengate-track > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.migration-goldengate-track.cdc .migration-flow-track::before {
+  background: rgba(199, 119, 0, 0.48);
+}
+
+.migration-goldengate-track.cdc .migration-flow-track > svg {
+  color: var(--amber);
+}
+
+.migration-goldengate-track.cdc .migration-flow-token {
+  background: var(--amber);
+}
+
+.migration-goldengate-track.cdc .migration-flow-token {
+  animation-duration: 2.35s;
+}
+
+@keyframes migrationFlow {
+  0% { left: 3%; opacity: 0; transform: scale(0.7); }
+  15% { opacity: 1; transform: scale(1); }
+  82% { opacity: 1; transform: scale(1); }
+  100% { left: calc(100% - 26px); opacity: 0; transform: scale(0.7); }
+}
+
+.migration-indicators {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.migration-indicator {
+  display: grid;
+  gap: 5px;
+  min-height: 80px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfdfc;
+  padding: 12px;
+}
+
+.migration-indicator span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 760;
+}
+
+.migration-indicator strong {
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.migration-indicator.teal { border-color: rgba(5, 122, 117, 0.28); }
+.migration-indicator.amber { border-color: rgba(199, 119, 0, 0.3); }
+
+@media (max-width: 940px) {
+  .migration-dump-diagram,
+  .migration-native-diagram,
+  .migration-goldengate-diagram {
+    grid-template-columns: 1fr;
+  }
+
+  .migration-flow-link {
+    min-height: 46px;
+  }
+
+  .migration-flow-link .migration-flow-track,
+  .migration-replication-lane > .migration-flow-track {
+    width: 46px;
+    transform: rotate(90deg);
+  }
+
+  .migration-replication-lane {
+    justify-items: center;
+    min-height: 118px;
+  }
+}
+
+@media (max-width: 640px) {
+  .migration-playbook .segmented {
+    width: 100%;
+  }
+
+  .migration-playbook .chip {
+    flex: 1 1 0;
+  }
+
+  .migration-indicators,
+  .migration-watchout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .migration-diagram {
+    padding: 12px;
+  }
+
+  .migration-goldengate-track {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .migration-flow-token {
+    animation: none;
+  }
+}
 }

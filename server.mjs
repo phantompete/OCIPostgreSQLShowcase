@@ -154,11 +154,25 @@ function json(res, status, payload) {
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health") {
     const result = await query(`
+      WITH database_stats AS (
+        SELECT numbackends, blks_hit, blks_read, stats_reset
+        FROM pg_stat_database
+        WHERE datname = current_database()
+      )
       SELECT
         current_database() AS database,
         current_user AS user_name,
         current_setting('server_version') AS server_version,
+        pg_is_in_recovery() AS is_in_recovery,
+        pg_postmaster_start_time() AS started_at,
+        EXTRACT(EPOCH FROM clock_timestamp() - pg_postmaster_start_time())::bigint AS uptime_seconds,
+        database_stats.numbackends AS active_connections,
+        current_setting('max_connections')::int AS max_connections,
+        ROUND((100.0 * database_stats.blks_hit / NULLIF(database_stats.blks_hit + database_stats.blks_read, 0))::numeric, 1) AS cache_hit_pct,
+        database_stats.stats_reset AS stats_reset_at,
+        CASE WHEN pg_is_in_recovery() THEN pg_last_xact_replay_timestamp() END AS last_replay_at,
         now() AS checked_at
+      FROM database_stats
     `);
 
     if (!result.ok) {
