@@ -154,10 +154,28 @@ function json(res, status, payload) {
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health") {
     const result = await query(`
-      WITH database_stats AS (
+      WITH current_database_stats AS (
         SELECT numbackends, blks_hit, blks_read, stats_reset
         FROM pg_stat_database
         WHERE datname = current_database()
+      ),
+      all_database_connections AS (
+        SELECT COALESCE(SUM(numbackends), 0)::int AS active_connections
+        FROM pg_stat_database
+        WHERE datname IS NOT NULL
+      ),
+      top_database_connections AS (
+        SELECT COALESCE(
+          json_agg(json_build_object('name', datname, 'connections', numbackends) ORDER BY numbackends DESC, datname),
+          '[]'::json
+        ) AS top_databases
+        FROM (
+          SELECT datname, numbackends
+          FROM pg_stat_database
+          WHERE datname IS NOT NULL
+          ORDER BY numbackends DESC, datname
+          LIMIT 3
+        ) AS ranked_databases
       )
       SELECT
         current_database() AS database,
@@ -166,13 +184,16 @@ async function handleApi(req, res, url) {
         pg_is_in_recovery() AS is_in_recovery,
         pg_postmaster_start_time() AS started_at,
         EXTRACT(EPOCH FROM clock_timestamp() - pg_postmaster_start_time())::bigint AS uptime_seconds,
-        database_stats.numbackends AS active_connections,
+        all_database_connections.active_connections,
         current_setting('max_connections')::int AS max_connections,
-        ROUND((100.0 * database_stats.blks_hit / NULLIF(database_stats.blks_hit + database_stats.blks_read, 0))::numeric, 1) AS cache_hit_pct,
-        database_stats.stats_reset AS stats_reset_at,
+        ROUND((100.0 * current_database_stats.blks_hit / NULLIF(current_database_stats.blks_hit + current_database_stats.blks_read, 0))::numeric, 1) AS cache_hit_pct,
+        current_database_stats.stats_reset AS stats_reset_at,
         CASE WHEN pg_is_in_recovery() THEN pg_last_xact_replay_timestamp() END AS last_replay_at,
+        top_database_connections.top_databases,
         now() AS checked_at
-      FROM database_stats
+      FROM current_database_stats
+      CROSS JOIN all_database_connections
+      CROSS JOIN top_database_connections
     `);
 
     if (!result.ok) {
@@ -342,6 +363,7 @@ async function handleApi(req, res, url) {
         ROUND(${postgis}.ST_Y(l.geom)::numeric, 6) AS lat,
         ROUND((${postgis}.ST_Distance(l.geom::${postgis}.geography, customer.point) / 1000)::numeric, 2) AS km
       FROM oci_pg_showcase.service_locations l, customer
+      WHERE ${postgis}.ST_DWithin(l.geom::${postgis}.geography, customer.point, 60000)
       ORDER BY ${postgis}.ST_Distance(l.geom::${postgis}.geography, customer.point)
       LIMIT 5
     `);

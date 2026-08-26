@@ -12,18 +12,36 @@ const nativeLogicalReplicationSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/storage-best-practices.htm";
 const pglogicalSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/upgrades.htm";
+const serviceOverviewSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/overview.htm";
+const availabilitySource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/high-availability.htm";
+const createDatabaseSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/create-db.htm";
+const metricsSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/metrics.htm";
+const loggingSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/logging.htm";
+const maintenanceSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/maintenance.htm";
+const queryInsightsSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/query-insights.htm";
+const grafanaSource =
+  "https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/grafana.htm";
+const prometheusGrafanaSource =
+  "https://docs.oracle.com/en/learn/ocipgsql-promgra/index.html";
 const apiBase = window.location.protocol === "file:" ? "http://localhost:8787" : "";
 
 const pageData = {
   overview: {
-    title: "Extension portfolio",
-    eyebrow: "Customer-ready use cases",
+    title: "OCI PostgreSQL showcase",
+    eyebrow: "Managed platform and workloads",
     nav: "Portfolio",
     icon: "layout-dashboard",
-    pill: "Built for demos",
-    heroTitle: "Turn supported PostgreSQL extensions into customer stories.",
+    pill: "Built for customer conversations",
+    heroTitle: "Run PostgreSQL workloads with OCI confidence.",
     summary:
-      "Show how OCI Database with PostgreSQL can power AI search, query performance, automation, governance, location intelligence, and data products from one managed platform.",
+      "Connect managed availability, security, operations, recovery, migration, and differentiated PostgreSQL workloads into one practical customer story.",
     help: [
       ["pgvector", "Stores vector embeddings and supports similarity search inside PostgreSQL, making product recommendations, semantic search, and retrieval-augmented generation patterns feel native to the database."],
       ["pg_stat_statements", "Tracks normalized SQL execution statistics so teams can identify high-cost queries by total time, calls, rows, and latency."],
@@ -46,10 +64,33 @@ const pageData = {
     help: [
       ["How live mode works", "The browser calls a local Node API. The API connects to PostgreSQL with DATABASE_URL, runs parameterized read-only showcase queries, and returns sanitized JSON."],
       ["Why not browser-to-database", "Direct database connections from a browser would expose credentials and are not how customer-facing demos should be built."],
-      ["Operational snapshot", "Uptime and connection headroom are current signals. Cache ratio accumulates since statistics reset, and replica replay activity is the most recently replayed transaction, not a guaranteed lag target."],
+      ["Operational snapshot", "Uptime and connection headroom are current signals. Connection headroom compares all active database backends with the server limit; cache ratio accumulates since statistics reset, and replay activity is not a guaranteed lag target."],
       ["Setup", "Copy .env.example to .env, set DATABASE_URL, run npm install, optionally run sql/demo_schema.sql, then start the server with npm start."],
     ],
     render: renderLive,
+  },
+  availability: {
+    title: "Availability and scale",
+    eyebrow: "Multi-node HA, reader endpoints, flexible capacity",
+    nav: "Availability",
+    icon: "network",
+    pill: "Ready for growth",
+    heroTitle: "Keep service available as demand changes.",
+    summary:
+      "In-region resilience, read scale, and flexible capacity help teams protect customer experiences while matching the platform to changing demand.",
+    help: [
+      ["Single-node recovery", "OCI can recover a single-node database system onto newly provisioned compute while preserving its endpoint. Use this posture for development, test, or noncritical production workloads."],
+      ["Multi-node high availability", "A multi-node database system has a primary plus read replicas. OCI can promote a replica after a fault, and regional placement helps tolerate availability-domain disruption."],
+      ["Reader endpoints", "A reader endpoint provides a single read-only access point for application read traffic across replica nodes. The primary retains the read/write endpoint."],
+      ["Capacity choices", "Database-optimized storage scales as data changes. Compute shapes and storage performance tiers are selected and adjusted to match workload needs."],
+      ["HA and DR are different", "In-region high availability addresses node or availability-domain faults. The DR page addresses backup recovery, point-in-time recovery, and cross-region continuity."],
+    ],
+    references: [
+      ["High availability and business continuity", availabilitySource],
+      ["OCI PostgreSQL service overview", serviceOverviewSource],
+      ["Create a database system", createDatabaseSource],
+    ],
+    render: renderAvailability,
   },
   dr: {
     title: "Disaster recovery",
@@ -90,6 +131,7 @@ const pageData = {
       ["Native logical replication", "Built-in PostgreSQL publication and subscription replication that keeps DML synchronized before a low-downtime cutover. Schema, DDL, and sequence state must be coordinated separately."],
       ["pglogical", "An OCI-supported extension for advanced replication scopes and topologies. It must be enabled in OCI configuration and still needs active DDL coordination."],
       ["GoldenGate Initial Load + CDC", "Oracle GoldenGate can load an initial data set and continuously capture and apply source changes until the target catches up for cutover."],
+      ["Major-version upgrades", "Use the same planning discipline for version changes: assess compatibility, handle roles separately, rehearse the cutover, validate data and application behavior, then refresh statistics."],
       ["Cutover validation", "Before redirecting traffic, compare data, verify roles and application connectivity, confirm replication has caught up, and retain a tested rollback path."],
       ["Source and target readiness", "Check network access, compatible PostgreSQL versions and extensions, role privileges, logical replication settings, WAL capacity, and target sizing before migration."],
     ],
@@ -119,22 +161,34 @@ const pageData = {
     ],
     render: renderAi,
   },
-  performance: {
-    title: "Performance cockpit",
-    eyebrow: "pg_stat_statements + pg_repack",
-    nav: "Performance",
-    icon: "gauge",
-    pill: "Operate with evidence",
-    heroTitle: "Move from reactive tuning to measurable workload health.",
+  observe: {
+    title: "Observability",
+    eyebrow: "Metrics, query insights, tuning, operations",
+    nav: "Observability",
+    icon: "activity",
+    pill: "Operational confidence",
+    heroTitle: "Detect risk, understand cause, and improve with evidence.",
     summary:
-      "Evidence-led workload visibility focuses investment on the query, cache, and bloat issues that most affect customer experience and cost.",
+      "OCI telemetry, Query Insights, PostgreSQL workload evidence, and planned operations connect customer impact to a clear next action.",
     help: [
-      ["pg_stat_statements", "Collects query-level performance statistics that reveal where the workload is actually spending time."],
-      ["pg_repack", "Compacts tables and rebuilds indexes online, helping reclaim bloat and improve access paths with less disruption."],
-      ["pg_buffercache", "Shows what is resident in shared buffers, useful for explaining cache pressure and hot relation behavior."],
-      ["pgstattuple", "Estimates tuple-level table and index bloat, giving maintenance recommendations a concrete data source."],
+      ["OCI service metrics", "OCI emits PostgreSQL metrics in the oci_postgresql namespace for health, capacity, and performance. Metrics are available without enabling a separate database agent."],
+      ["Query Insights", "OCI Query Insights shows average active sessions, wait events, and top queries for tuning, capacity planning, and daily administration. Enabling or disabling it restarts the database system and uses compute resources."],
+      ["PostgreSQL workload evidence", "pg_stat_statements identifies costly normalized SQL; pg_buffercache and pgstattuple add cache and bloat context; pg_repack supports lower-disruption maintenance."],
+      ["Alarms and notifications", "Use Monitoring thresholds and Notifications to route actionable signals to the teams responsible for service health."],
+      ["Logs and events", "PostgreSQL logs, including pgaudit output, can be exported to OCI Logging or Object Storage. OCI events can route resource-state changes to operational workflows."],
+      ["Managed configuration", "Use configurations to manage supported PostgreSQL settings consistently across database systems; validate settings and application behavior before rollout."],
+      ["Maintenance windows", "OCI management policies let teams choose a maintenance schedule that avoids peak activity. Applications should still use connection retries for planned node work."],
+      ["Grafana options", "Grafana can visualize OCI Monitoring metrics through the OCI data source, or visualize PostgreSQL Exporter metrics collected by Prometheus. These are external monitoring architectures, not built-in showcase integrations."],
     ],
-    render: renderPerformance,
+    references: [
+      ["OCI PostgreSQL metrics", metricsSource],
+      ["OCI PostgreSQL Query Insights", queryInsightsSource],
+      ["OCI PostgreSQL logging", loggingSource],
+      ["OCI PostgreSQL maintenance", maintenanceSource],
+      ["OCI data source for Grafana", grafanaSource],
+      ["OCI PostgreSQL with Prometheus and Grafana", prometheusGrafanaSource],
+    ],
+    render: renderObservability,
   },
   location: {
     title: "Location intelligence",
@@ -144,11 +198,13 @@ const pageData = {
     pill: "Spatial products",
     heroTitle: "Add geography to customer, asset, and service workflows.",
     summary:
-      "Location-aware decisions enable faster dispatch, stronger coverage, and more confident service and site planning from the data teams already manage.",
+      "PostGIS keeps proximity, coverage, and eligibility decisions close to operational data, while AI can interpret requests and explain the resulting recommendation.",
     help: [
-      ["PostGIS", "Adds geometry and geography types, spatial indexes, and functions such as distance, intersection, containment, and routing-adjacent analysis."],
-      ["OCI note", "Oracle's supported extension list notes that PostGIS-related extensions are enabled only in the OC1 realm."],
-      ["Customer value", "Spatial functions turn everyday records into location-aware products: field service, branch planning, delivery optimization, and risk zones."],
+      ["PostGIS", "Adds geometry and geography types, GiST spatial indexes, and functions for distance, containment, intersection, and coverage decisions."],
+      ["Geometry and geography", "Use geography for global latitude/longitude distance in metres. Use geometry with an appropriate projected coordinate system for local, planar analysis and broader spatial operations."],
+      ["AI boundary", "AI can interpret a customer request and explain a recommendation. PostGIS and explicit availability, capability, and policy rules determine which candidates are eligible."],
+      ["OCI enablement", "PostGIS must be enabled through an OCI custom configuration, and Oracle currently permits PostGIS-related extensions only in the OC1 realm."],
+      ["Customer value", "Spatial functions turn everyday records into location-aware products: field-service dispatch, coverage checks, branch planning, delivery inputs, and risk-zone analysis."],
     ],
     render: renderLocation,
   },
@@ -169,19 +225,27 @@ const pageData = {
     render: renderOperations,
   },
   trust: {
-    title: "Trust and data products",
-    eyebrow: "pgaudit + pgcrypto + postgres_fdw",
-    nav: "Trust",
+    title: "Security and governance",
+    eyebrow: "IAM, private networking, data controls",
+    nav: "Security",
     icon: "shield-check",
-    pill: "Governed sharing",
-    heroTitle: "Make governed data safely reusable.",
+    pill: "Controls by design",
+    heroTitle: "Protect data without slowing teams down.",
     summary:
-      "Auditable access, protected values, and controlled federation help teams share data faster without weakening compliance.",
+      "OCI platform controls and PostgreSQL data controls work together to keep access private, auditable, and useful for governed products.",
     help: [
+      ["OCI IAM and compartments", "IAM policies and compartments control who can manage OCI PostgreSQL resources. PostgreSQL roles separately govern access inside the database."],
+      ["Private connectivity", "OCI PostgreSQL database system endpoints use private IP addresses in a VCN. Network security groups and subnet rules control which clients can reach them."],
+      ["Vault and encryption", "Administrator credentials can be stored in OCI Vault. OCI PostgreSQL encrypts data in transit and at rest; customers still govern application secrets and database roles."],
       ["pgaudit", "Produces detailed audit logs for database activity, supporting accountability and regulated access reviews."],
       ["pgcrypto", "Adds cryptographic functions for hashing, random values, and encryption workflows handled close to the data."],
       ["postgres_fdw", "Lets PostgreSQL query remote PostgreSQL tables through foreign data wrappers, useful for governed federation and phased consolidation."],
       ["pglogical", "Supports logical replication patterns where organizations need data distribution or migration pathways."],
+    ],
+    references: [
+      ["Create a database system", createDatabaseSource],
+      ["OCI PostgreSQL service overview", serviceOverviewSource],
+      ["OCI PostgreSQL logging", loggingSource],
     ],
     render: renderTrust,
   },
@@ -251,21 +315,24 @@ function renderPage(route) {
 
 function renderOverview() {
   const cards = [
-    ["database", "Live database lab", "Optional backend mode that checks real extension availability and runs curated demo queries.", "DATABASE_URL", "safe API", "green"],
+    ["network", "Availability and scale", "Multi-node availability, reader endpoints, and flexible capacity make the managed service ready for production demand.", "HA", "read scale", "teal"],
     ["cloud-cog", "Disaster recovery", "Backup and restore, cross-region backup copies, warm standby replication, RPO guardrails, and switchover storylines.", "Warm Standby", "Backups", "red"],
+    ["git-branch", "Migration", "Choose dump and restore, native logical replication, or GoldenGate CDC for an OCI move with an explicit cutover posture.", "cutover", "validation", "amber"],
+    ["activity", "Observability", "Connect OCI metrics, Query Insights, PostgreSQL evidence, and operating actions to protect customer experience.", "Query Insights", "Grafana", "green"],
+    ["shield-check", "Security and governance", "Combine IAM, private connectivity, Vault, auditing, encryption, and federated data access.", "IAM", "pgaudit", "violet"],
     ["sparkles", "AI and search", "Recommendations, answer retrieval, support article matching, and next-best action powered by embeddings.", "pgvector", "pg_trgm", "teal"],
     ["gauge", "Workload health", "High-cost SQL, bloat, cache pressure, and measured tuning impact for operational reviews.", "pg_stat_statements", "pg_repack", "amber"],
     ["map", "Spatial products", "Nearest asset, coverage zone, branch planning, service territory, and risk overlay experiences.", "PostGIS", "OC1 note", "red"],
     ["calendar-clock", "Lifecycle automation", "Scheduled retention, partition creation, rollups, and maintenance workflows kept close to the data.", "pg_cron", "pg_partman", "green"],
-    ["shield-check", "Governed sharing", "Auditable access, encryption workflows, and federated reads for compliant data products.", "pgaudit", "postgres_fdw", "violet"],
+    ["database", "Live database lab", "Optional backend mode that checks real extension availability and runs curated demo queries.", "DATABASE_URL", "safe API", "green"],
   ];
 
   return `
     <div class="metric-strip">
-      ${metric("13", "standout extensions curated")}
-      ${metric("6", "customer-facing use-case paths")}
-      ${metric("1", "optional live database lab")}
-      ${metric("OC1", "PostGIS realm note surfaced")}
+      ${metric("3", "managed platform stories")}
+      ${metric("6", "differentiated workload stories")}
+      ${metric("2", "continuity playbooks")}
+      ${metric("1", "optional connected lab")}
     </div>
     <div class="grid overview-grid">
       ${cards
@@ -284,6 +351,36 @@ function renderOverview() {
         )
         .join("")}
     </div>
+  `;
+}
+
+function availabilityNode(iconName, titleText, copy, tone, badge) {
+  return `<article class="availability-node ${tone}"><span class="availability-badge">${badge}</span><i data-lucide="${iconName}" aria-hidden="true"></i><strong>${titleText}</strong><small>${copy}</small></article>`;
+}
+
+function renderAvailability() {
+  return `
+    <section class="scenario-panel availability-architecture">
+      <div class="panel-heading"><div><p class="eyebrow">In-region service architecture</p><h3>Serve writes, scale reads, recover from faults</h3></div><span class="tag">Managed database system</span></div>
+      <div class="availability-diagram" role="img" aria-label="Applications connect through read write and reader endpoints to an OCI PostgreSQL primary and read replicas using shared database optimized storage">
+        <article class="availability-client"><i data-lucide="app-window" aria-hidden="true"></i><strong>Applications</strong><span>Transaction and read traffic</span></article>
+        <div class="availability-endpoints"><span><i data-lucide="arrow-right" aria-hidden="true"></i>Read/write endpoint</span><span><i data-lucide="arrow-right" aria-hidden="true"></i>Reader endpoint</span></div>
+        ${availabilityNode("database", "Primary node", "Writes and primary reads", "primary", "RW")}
+        <div class="availability-replica-group">${availabilityNode("database", "Read replica", "Reader endpoint traffic", "replica", "RO")}${availabilityNode("database", "Read replica", "Eligible for promotion", "replica", "RO")}</div>
+        <article class="availability-storage"><i data-lucide="hard-drive" aria-hidden="true"></i><div><strong>OCI database-optimized storage</strong><span>Shared storage that scales independently of compute</span></div><b>Regional durability</b></article>
+      </div>
+      <aside class="availability-boundary"><i data-lucide="split" aria-hidden="true"></i><div><strong>High availability is not cross-region DR</strong><p>Multi-node placement protects in-region service continuity. Use the DR playbook for recovery from data loss or regional disruption.</p></div><span class="tag">Different decisions</span></aside>
+    </section>
+
+    <div class="grid two-col availability-detail-grid">
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Choose the service posture</p><h3>Match resilience to business impact</h3></div></div><div class="mini-stack">${mini("Single node", "Use for development, test, or noncritical workloads where restored service is sufficient and read scale is not required.", "Simple")}${mini("Multi-node HA", "Use a primary plus replicas when customer-facing availability needs automatic in-region promotion after a node fault.", "Resilient")}${mini("Regional placement", "Use nodes across availability domains where the workload must tolerate an availability-domain disruption.", "Stronger continuity")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Scale deliberately</p><h3>Change the resource that is constrained</h3></div></div><div class="mini-stack">${mini("Read scale", "Add read replicas and use the reader endpoint when read traffic is the limiting workload.", "Replica nodes")}${mini("Compute and temporary capacity", "Select flexible compute shapes and performance tiers to fit CPU, memory, temporary files, and I/O demand.", "Right-size")}${mini("Data and WAL storage", "Database-optimized storage grows with managed database data; monitor WAL and workload behavior as capacity changes.", "Auto-scale storage")}</div></section>
+    </div>
+
+    ${tradeoffPanel(
+      [["Protect customer-facing service", "Use in-region HA and reader endpoints to keep critical workloads available and responsive."], ["Scale with demand", "Separate read scaling, compute sizing, and managed storage choices so teams can target the real constraint."]],
+      [["More nodes need a routing plan", "Applications must direct writes to the primary and suitable reads to the reader endpoint."], ["High availability does not replace recovery planning", "Keep backup, point-in-time recovery, and cross-region decisions explicit for data-loss and regional scenarios."]],
+    )}
   `;
 }
 
@@ -403,6 +500,11 @@ function renderMigration() {
 
     <div id="migration-pattern-demo"></div>
 
+    <section class="scenario-panel migration-upgrade-readiness">
+      <div class="panel-heading"><div><p class="eyebrow">Major-version upgrade readiness</p><h3>Use the migration playbook for planned upgrades</h3></div><span class="tag">Test before cutover</span></div>
+      <div class="grid two-col"><div class="mini-stack">${mini("Planned upgrade", "Use pg_dump and pg_restore when a controlled switchover window is acceptable. Move roles separately and validate applications before redirecting traffic.", "pg_dump + restore")}${mini("Low-downtime upgrade", "Use pglogical only when its tested replication capabilities justify the added extension configuration and operating complexity.", "pglogical")}</div><div class="code-panel migration-upgrade-checklist"><div class="panel-heading"><div><p class="eyebrow">Always validate</p><h3>Upgrade control points</h3></div></div><pre><code>[ ] Confirm target version and extensions&#10;[ ] Export and validate roles separately&#10;[ ] Rehearse application compatibility&#10;[ ] Compare data before cutover&#10;[ ] Refresh statistics after restore</code></pre></div></div>
+    </section>
+
     <section class="scenario-panel migration-watchouts">
       <div class="panel-heading"><div><p class="eyebrow">Migration watch-outs</p><h3>Resolve these before cutover</h3></div></div>
       <div class="grid two-col migration-watchout-grid">
@@ -479,6 +581,7 @@ function renderLive() {
           <div class="live-health-grid" id="live-health-snapshot">
             ${healthSnapshotLoadingCards()}
           </div>
+          <p class="live-connection-distribution" id="live-connection-distribution" hidden></p>
         </div>
       </section>
 
@@ -600,6 +703,15 @@ function renderAi() {
       ${metric("22%", "product discovery lift")}
       ${metric("1", "governed retrieval layer")}
     </div>
+
+    <section class="scenario-panel ai-spatial-bridge">
+      <div>
+        <p class="eyebrow">Spatial-aware AI</p>
+        <h3>Let AI understand the request; let PostGIS prove the recommendation.</h3>
+        <p>For dispatch and serviceability journeys, use AI to interpret intent and explain the outcome while PostGIS applies proximity, coverage, and policy-grounded candidate rules.</p>
+      </div>
+      <a class="chip" href="#location"><i data-lucide="map" aria-hidden="true"></i>Explore Location intelligence</a>
+    </section>
 
     <section class="scenario-panel ai-canvas">
       <div class="panel-heading">
@@ -735,7 +847,26 @@ function tradeoffPanel(benefits, considerations) {
   `;
 }
 
-function renderPerformance() {
+const observabilityPatternData = {
+  detect: {
+    label: "Detect and alert",
+    title: "Turn service signals into owned responses",
+    copy: "Use OCI Monitoring metrics and alarms to detect customer-impacting conditions early, then route notifications to the team that owns the next action.",
+    signals: [["Blocked queries", "Sessions waiting on other work", "contention"], ["Long-running queries", "Queries exceeding five minutes", "workload"], ["Read latency", "Storage-read responsiveness", "experience"], ["WAL storage", "Durability and replication capacity", "continuity"]],
+    runbook: [["01", "Define the customer-impact signal", "Choose a metric and threshold that aligns to a real service risk, not an arbitrary dashboard target.", "warn"], ["02", "Create the alarm and route", "Use OCI Monitoring and Notifications to send a clear alert to the accountable operational owner.", "hot"], ["03", "Diagnose with evidence", "Use Query Insights, PostgreSQL workload signals, logs, and Live Lab context to identify the cause.", "warn"], ["04", "Improve the guardrail", "Update the runbook, capacity plan, or application behavior after the incident is understood.", "ok"]],
+    guidance: "Detection boundary\n\nOCI Monitoring: service metrics and alarms\nQuery Insights: active sessions, waits, top queries\nLive Lab: read-only database context\nExternal dashboards: optional Grafana architectures\n\nValidate thresholds against normal traffic patterns.",
+  },
+  investigate: {
+    label: "Investigate and improve",
+    title: "Connect metrics, logs, changes, and maintenance",
+    copy: "Use OCI logs, events, configurations, and planned maintenance together with PostgreSQL workload evidence to diagnose issues and prevent repeat incidents.",
+    signals: [["PostgreSQL and audit logs", "Export to OCI Logging or Object Storage", "evidence"], ["OCI events", "Track resource-state changes", "change"], ["Configurations", "Apply supported settings consistently", "consistency"], ["Maintenance policy", "Choose a service window outside peak demand", "resilience"]],
+    runbook: [["01", "Correlate the service change", "Check OCI events, maintenance activity, and application timing before assuming a database query is the cause.", "warn"], ["02", "Inspect logs and workload evidence", "Use exported PostgreSQL and audit logs with query, bloat, and connection evidence to narrow the diagnosis.", "hot"], ["03", "Test the improvement safely", "Validate configuration, capacity, or application changes in a representative non-production environment.", "warn"], ["04", "Standardize the operating model", "Capture the change in a configuration, maintenance policy, runbook, and monitoring rule where applicable.", "ok"]],
+    guidance: "Operations boundary\n\nOCI Logging: service and audit evidence\nOCI Events: resource-state changes\nConfigurations: supported PostgreSQL settings\nMaintenance policy: planned service windows\n\nUse retries for planned node maintenance.",
+  },
+};
+
+function renderObservability() {
   const queries = [
     ["customer_orders_rollup", "42% total time", "pg_stat_statements", "hot"],
     ["inventory_by_region", "18% cache misses", "pg_buffercache", "warn"],
@@ -743,73 +874,95 @@ function renderPerformance() {
   ];
 
   return `
+    <section class="scenario-panel">
+      <div class="panel-heading"><div><p class="eyebrow">Observability flow</p><h3>Move from signal to a safer next action</h3></div><span class="tag">Customer-impact first</span></div>
+      <div class="grid four-col">${mini("Detect", "Use OCI service metrics, alarms, and notifications to identify customer-impacting conditions.", "OCI Monitoring")}${mini("Diagnose", "Use Query Insights and PostgreSQL workload evidence to connect sessions, waits, and SQL to the signal.", "Query context")}${mini("Improve", "Prioritize query, cache, bloat, capacity, or maintenance changes using measured evidence.", "Tuning")}${mini("Operate", "Use logs, events, configurations, and maintenance windows to make the improvement dependable.", "Runbook")}</div>
+    </section>
+
+    <div class="grid two-col observability-detail-grid">
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">OCI Query Insights</p><h3>See active sessions, waits, and top queries</h3></div><span class="tag">OCI-native</span></div><div class="mini-stack">${mini("Average active sessions", "Review CPU and wait-event activity over time to locate contention and resource pressure.", "Sessions")}${mini("Top queries", "Rank and filter statements by load, query count, mean execution time, database, role, and instance.", "SQL")}${mini("Enable deliberately", "Query Insights uses compute resources; enabling or disabling it restarts the database system.", "Restart")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Monitoring surfaces</p><h3>Choose the dashboard that fits the estate</h3></div></div><div class="mini-stack">${mini("OCI Monitoring + Query Insights", "Use OCI service metrics, alarms, and managed query analysis for the database system.", "OCI")}${mini("Grafana OCI data source", "Visualize oci_postgresql metrics alongside other cloud and application metrics in Grafana.", "External")}${mini("PostgreSQL Exporter → Prometheus → Grafana", "Collect deeper PostgreSQL metrics for Grafana dashboards, including bloat and query-level views.", "External")}</div></section>
+    </div>
+
     <div class="grid two-col">
       <section class="scenario-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Top workload signals</p>
-            <h3>Evidence-led tuning queue</h3>
-          </div>
-        </div>
-        <div class="query-table">
-          ${queries
-            .map(
-              ([name, value, extension, state]) => `
-                <div class="query-row">
-                  <div>
-                    <p>${name}</p>
-                    <span>${extension}</span>
-                  </div>
-                  <strong>${value}</strong>
-                  <span class="status ${state}">${state}</span>
-                </div>
-              `,
-            )
-            .join("")}
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">PostgreSQL workload evidence</p><h3>Evidence-led tuning queue</h3></div></div>
+        <div class="query-table">${queries.map(([name, value, extension, state]) => `<div class="query-row"><div><p>${name}</p><span>${extension}</span></div><strong>${value}</strong><span class="status ${state}">${state}</span></div>`).join("")}</div>
       </section>
       <section class="chart-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Before and after</p>
-            <h3>Measured maintenance impact</h3>
-          </div>
-        </div>
-        <div class="bar-list">
-          ${bar("Query p95 latency", "860 ms", 86, "red")}
-          ${bar("After repack and index rebuild", "310 ms", 31, "")}
-          ${bar("Table bloat reclaimed", "64%", 64, "amber")}
-          ${bar("Shared buffer residency", "77%", 77, "")}
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Before and after</p><h3>Measured maintenance impact</h3></div></div>
+        <div class="bar-list">${bar("Query p95 latency", "860 ms", 86, "red")}${bar("After repack and index rebuild", "310 ms", 31, "")}${bar("Table bloat reclaimed", "64%", 64, "amber")}${bar("Shared buffer residency", "77%", 77, "")}</div>
       </section>
     </div>
 
-    ${tradeoffPanel(
-      [
-        ["Focus tuning where impact is highest", "Prioritize work using measured query cost, cache pressure, and bloat signals."],
-        ["Prove the outcome", "Before-and-after evidence connects maintenance work to customer experience and cost."],
-      ],
-      [
-        ["Metrics need context", "Baselines, traffic changes, and workload patterns determine whether a signal needs action."],
-        ["Maintenance needs planning", "Repack and index work still require capacity, timing, and operational validation."],
-      ],
-    )}
+    <section class="scenario-panel observability-playbook">
+      <div class="panel-heading observability-playbook-heading"><div><p class="eyebrow">Operational response</p><h3>Detect, investigate, and improve</h3></div><div class="segmented" role="tablist" aria-label="OCI PostgreSQL operational response approaches"><button class="chip active" type="button" role="tab" aria-selected="true" data-observability-pattern="detect">Detect &amp; alert</button><button class="chip" type="button" role="tab" aria-selected="false" data-observability-pattern="investigate">Investigate &amp; improve</button></div></div>
+    </section>
+    <div id="observability-pattern-demo"></div>
+    ${tradeoffPanel([["Focus tuning where impact is highest", "Prioritize work using measured query cost, cache pressure, and bloat signals."], ["Prove the outcome", "Before-and-after evidence connects maintenance work to customer experience and cost."]], [["Metrics need context", "Baselines, traffic changes, and workload patterns determine whether a signal needs action."], ["External monitoring needs ownership", "Grafana, Prometheus, exporters, access, and alerts require a deliberately operated architecture."]])}
+  `;
+}
+
+function renderObservabilityPattern(pattern) {
+  const data = observabilityPatternData[pattern] || observabilityPatternData.detect;
+  return `
+    <section class="scenario-panel observability-pattern-panel"><div class="panel-heading"><div><p class="eyebrow">${data.label}</p><h3>${data.title}</h3></div><span class="tag">OCI-native operations</span></div><p class="observability-copy">${data.copy}</p><div class="observability-signal-grid">${data.signals.map(([titleText, copy, value]) => mini(titleText, copy, value)).join("")}</div></section>
+    <div class="grid two-col observability-detail-grid"><section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Sample operating runbook</p><h3>Keep response work explicit</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section><section class="code-panel observability-guidance"><div class="panel-heading"><div><p class="eyebrow">Scope and handoff</p><h3>Use signals with context</h3></div></div><pre><code>${data.guidance}</code></pre></section></div>
   `;
 }
 
 function renderLocation() {
   return `
     <div class="grid two-col">
-      <section class="scenario-panel">
-        <div class="map-stage" aria-label="Spatial service coverage visualization">
-          <span class="catchment a"></span>
-          <span class="catchment b"></span>
-          <span class="catchment c"></span>
-          <span class="route one"></span>
-          <span class="route two"></span>
-          <span class="map-node node-a">A</span>
-          <span class="map-node node-b">B</span>
-          <span class="map-node node-c">C</span>
+      <section class="scenario-panel location-dispatch-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Illustrative service moment</p>
+            <h3>AI-assisted, spatially grounded dispatch</h3>
+          </div>
+          <span class="tag">Guided scenario</span>
+        </div>
+        <div class="dispatch-diagram" role="img" aria-label="A customer reports urgent refrigeration repair. AI interprets the request, then PostGIS uses an index-aware ST_DWithin proximity filter and ST_Intersects territory check. Availability, skills, and policy choose Crew 12 as the recommended dispatch.">
+          <article class="dispatch-step customer-signal">
+            <span class="dispatch-icon"><i data-lucide="map-pin" aria-hidden="true"></i></span>
+            <p>1. Customer signal</p>
+            <strong>Urgent refrigeration repair</strong>
+            <small>Location and service request</small>
+          </article>
+          <article class="dispatch-step ai-interpretation">
+            <span class="dispatch-icon"><i data-lucide="sparkles" aria-hidden="true"></i></span>
+            <p>2. AI interprets</p>
+            <strong>Cooling issue · priority repair</strong>
+            <small>Explains the grounded recommendation</small>
+          </article>
+          <article class="dispatch-step spatial-filter">
+            <span class="dispatch-icon"><i data-lucide="database" aria-hidden="true"></i></span>
+            <p>3. PostGIS proves eligibility</p>
+            <strong>Nearby, covered candidates</strong>
+            <small>Deterministic spatial predicates</small>
+            <div class="spatial-predicate-list">
+              <span>ST_DWithin · GiST</span>
+              <span>ST_Intersects</span>
+            </div>
+          </article>
+          <article class="dispatch-step dispatch-recommendation">
+            <span class="dispatch-icon"><i data-lucide="badge-check" aria-hidden="true"></i></span>
+            <p>4. Recommended dispatch</p>
+            <strong>Crew 12</strong>
+            <small>7.4 km · certified · available</small>
+            <div class="candidate-map" aria-hidden="true">
+              <span class="candidate-customer">Customer</span>
+              <span class="candidate-crew alternate">Crew 8</span>
+              <span class="candidate-crew selected">Crew 12</span>
+              <span class="candidate-territory"></span>
+            </div>
+          </article>
+        </div>
+        <div class="dispatch-legend" aria-label="Dispatch diagram legend">
+          <span><i class="dispatch-legend-dot customer"></i>Customer request</span>
+          <span><i class="dispatch-legend-dot candidate"></i>Eligible crew</span>
+          <span><i class="dispatch-legend-dot selected"></i>Selected crew</span>
+          <span><i class="dispatch-legend-area"></i>Service territory</span>
         </div>
       </section>
       <section class="chart-panel">
@@ -820,21 +973,21 @@ function renderLocation() {
           </div>
         </div>
         <div class="mini-stack">
-          ${mini("Nearest dispatch center", "ST_DWithin narrows candidates before ranking by distance.", "7.4 km")}
-          ${mini("Service territory overlap", "ST_Intersects identifies customers covered by multiple depots.", "18%")}
-          ${mini("New branch catchment", "Geometry buffers model market reach before site selection.", "42k households")}
+          ${mini("Filter nearby candidates", "ST_DWithin can use the GiST index to narrow the dispatch set before exact distance and business ranking.", "7.4 km")}
+          ${mini("Confirm coverage", "ST_Intersects verifies that the customer point falls within an eligible service territory.", "Covered")}
+          ${mini("Explain, do not override", "AI translates the request and explains why the policy-grounded selection is suitable; it does not replace spatial or service rules.", "Governed")}
         </div>
       </section>
     </div>
 
     ${tradeoffPanel(
       [
-        ["Faster service decisions", "Use proximity and coverage signals to route work and resolve customer needs sooner."],
+        ["Faster, defensible dispatch", "Bring location, coverage, skills, availability, and policy checks together before selecting a crew."],
         ["Planning based on actual reach", "Model catchments and overlap before committing to new sites or service territories."],
       ],
       [
         ["Spatial data must stay accurate", "Geocoding, boundaries, and source records need stewardship to keep decisions trustworthy."],
-        ["Index and realm fit need validation", "Spatial workloads need appropriate indexes and must fit the OCI realm availability model."],
+        ["Configuration and index fit need validation", "PostGIS must be enabled in an OCI custom configuration, is limited to OC1, and needs appropriate spatial indexes for the workload."],
       ],
     )}
   `;
@@ -906,11 +1059,21 @@ SELECT partman.run_maintenance_proc();</code></pre>
 
 function renderTrust() {
   return `
+    <section class="scenario-panel governance-architecture">
+      <div class="panel-heading"><div><p class="eyebrow">Layered control model</p><h3>Protect the platform and the data path</h3></div><span class="tag">Shared responsibility</span></div>
+      <div class="governance-layers" role="img" aria-label="OCI IAM, private networking, Vault and encryption, and PostgreSQL data controls layered to protect an OCI PostgreSQL workload">
+        <article class="governance-layer iam"><i data-lucide="users-round" aria-hidden="true"></i><div><strong>OCI IAM and compartments</strong><span>Control who can manage database systems, configurations, backups, and service resources.</span></div><b>Control plane</b></article>
+        <article class="governance-layer network"><i data-lucide="network" aria-hidden="true"></i><div><strong>Private VCN access and NSGs</strong><span>Keep database endpoints private and allow only approved application and administration paths.</span></div><b>Connectivity</b></article>
+        <article class="governance-layer protection"><i data-lucide="key-round" aria-hidden="true"></i><div><strong>Vault, secrets, and encryption</strong><span>Use Vault-backed administrator secrets and protect data in transit and at rest.</span></div><b>Protection</b></article>
+        <article class="governance-layer data"><i data-lucide="database" aria-hidden="true"></i><div><strong>PostgreSQL roles and data controls</strong><span>Apply least-privilege roles, auditing, protected values, and governed federation inside the serving path.</span></div><b>Data plane</b></article>
+      </div>
+    </section>
+
     <div class="grid two-col">
       <section class="scenario-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Audit feed</p>
+            <p class="eyebrow">Database control evidence</p>
             <h3>Governed access trail</h3>
           </div>
         </div>
@@ -938,11 +1101,11 @@ function renderTrust() {
 
     ${tradeoffPanel(
       [
-        ["Compliance in the serving path", "Audit trails and protected values make governed access part of normal product delivery."],
-        ["Safer data sharing", "Federated reads reduce extract sprawl while keeping valuable data usable across teams."],
+        ["Layered protection", "Private access, OCI resource controls, and database-level controls address different parts of the risk model."],
+        ["Governed data reuse", "Audit trails, protected values, and federated reads keep valuable data usable without uncontrolled extract sprawl."],
       ],
       [
-        ["Permissions and keys need governance", "Controls only work when roles, policies, and cryptographic material are actively managed."],
+        ["Control layers need clear ownership", "IAM policies, network rules, Vault secrets, and PostgreSQL roles must be managed and reviewed together."],
         ["Federation adds dependencies", "Shared services depend on the availability, performance, and contracts of remote data sources."],
       ],
     )}
@@ -1115,6 +1278,11 @@ function attachInteractions(route) {
     return;
   }
 
+  if (route === "observe") {
+    initObservabilityDemo();
+    return;
+  }
+
   if (route !== "ai") {
     return;
   }
@@ -1220,6 +1388,31 @@ function initMigrationDemo() {
   draw("dump");
 }
 
+function initObservabilityDemo() {
+  const demo = document.querySelector("#observability-pattern-demo");
+  const buttons = document.querySelectorAll("[data-observability-pattern]");
+
+  if (!demo || !buttons.length) {
+    return;
+  }
+
+  function draw(pattern) {
+    buttons.forEach((button) => {
+      const selected = button.dataset.observabilityPattern === pattern;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", String(selected));
+    });
+    demo.innerHTML = renderObservabilityPattern(pattern);
+    refreshIcons();
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => draw(button.dataset.observabilityPattern));
+  });
+
+  draw("detect");
+}
+
 function initAiPatternDemo() {
   const demo = document.querySelector("#ai-pattern-demo");
   const code = document.querySelector("#ai-pattern-code");
@@ -1306,6 +1499,7 @@ async function loadLiveLab() {
 async function loadHealth() {
   const target = document.querySelector("#live-status");
   const snapshot = document.querySelector("#live-health-snapshot");
+  const connectionDistribution = document.querySelector("#live-connection-distribution");
   if (!target) {
     return;
   }
@@ -1320,6 +1514,7 @@ async function loadHealth() {
   if (snapshot) {
     snapshot.innerHTML = healthSnapshotLoadingCards();
   }
+  renderConnectionDistribution(connectionDistribution, []);
 
   try {
     const data = await apiGet("/api/health");
@@ -1341,7 +1536,7 @@ async function loadHealth() {
       ${statusCard("Server version", data.server_version || "Unknown", "ok")}
       ${statusCard("Connected user", data.user_name || "Unknown", "ok")}
     `;
-    renderHealthSnapshot(snapshot, data);
+    renderHealthSnapshot(snapshot, connectionDistribution, data);
   } catch {
     target.innerHTML = `
       ${statusCard("API status", "Offline", "hot")}
@@ -1380,7 +1575,21 @@ function renderHealthSnapshotUnavailable(snapshot, detail) {
     .join("");
 }
 
-function renderHealthSnapshot(snapshot, data) {
+function renderConnectionDistribution(target, topDatabases) {
+  if (!target) {
+    return;
+  }
+  const databases = Array.isArray(topDatabases) ? topDatabases : [];
+  if (!databases.length) {
+    target.hidden = true;
+    target.innerHTML = "";
+    return;
+  }
+  target.hidden = false;
+  target.innerHTML = `<strong>Most connections:</strong>${databases.map((database) => `<span>${escapeHtml(database.name)} <b>${escapeHtml(database.connections)}</b></span>`).join('<i aria-hidden="true">·</i>')}`;
+}
+
+function renderHealthSnapshot(snapshot, connectionDistribution, data) {
   if (!snapshot) {
     return;
   }
@@ -1402,10 +1611,11 @@ function renderHealthSnapshot(snapshot, data) {
 
   snapshot.innerHTML = [
     healthSnapshotCard("Uptime", formatHealthDuration(data.uptime_seconds), `Started ${formatHealthTime(data.started_at)}`),
-    healthSnapshotCard("Connection headroom", `${data.active_connections ?? "?"} / ${data.max_connections ?? "?"}`, "Active connections / configured limit"),
+    healthSnapshotCard("Connection headroom", `${data.active_connections ?? "?"} / ${data.max_connections ?? "?"}`, "All database backends / configured limit"),
     healthSnapshotCard("Cache hit ratio", cacheValue, cacheDetail),
     healthSnapshotCard("Last replay activity", replayValue, replayDetail),
   ].join("");
+  renderConnectionDistribution(connectionDistribution, data.top_databases);
 }
 
 function formatHealthDuration(value) {
@@ -1695,8 +1905,8 @@ async function loadCrypto() {
 
 function openHelp() {
   const page = pageData[currentPage];
-  helpEyebrow.textContent = page.references ? "Architecture notes" : "Extension notes";
-  helpTitle.textContent = page.references ? `${page.title} notes` : `${page.title} extensions`;
+  helpEyebrow.textContent = page.references ? "Architecture notes" : "Showcase notes";
+  helpTitle.textContent = `${page.title} notes`;
   helpBody.innerHTML = `
     ${page.help
       .map(
@@ -1718,7 +1928,7 @@ function openHelp() {
           </article>`
         : `<article class="help-item support-note">
             <h3>OCI enablement</h3>
-            <p>Oracle lists these as supported OCI Database with PostgreSQL extensions. Several standout extensions must be enabled through a custom configuration before database administrators can create them.</p>
+            <p>This showcase combines OCI managed-service capabilities with supported PostgreSQL extensions. Validate service, configuration, networking, and extension prerequisites for each customer environment.</p>
             <p><a href="${supportedSource}" target="_blank" rel="noreferrer">Oracle extension reference</a></p>
           </article>`
     }

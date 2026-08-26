@@ -119,6 +119,7 @@ BEGIN
     $seed$, postgis_schema);
 
     EXECUTE 'CREATE INDEX IF NOT EXISTS service_locations_geom_idx ON oci_pg_showcase.service_locations USING gist (geom)';
+    EXECUTE format('CREATE INDEX IF NOT EXISTS service_locations_geography_idx ON oci_pg_showcase.service_locations USING gist ((geom::%I.geography))', postgis_schema);
   ELSE
     RAISE NOTICE 'Skipping spatial demo table because PostGIS is not installed.';
   END IF;

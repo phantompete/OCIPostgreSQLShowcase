@@ -1,10 +1,8 @@
-# OCI PostgreSQL Extension Showcase
+# OCI PostgreSQL Showcase
 
-A customer-facing showcase for standout OCI Database with PostgreSQL extensions. It can run as a static app, or with an optional local API that connects to a real PostgreSQL database for live demos.
+A customer-facing OCI Database with PostgreSQL showcase for managed platform decisions and differentiated PostgreSQL workloads. It can run as a static walkthrough or with an optional local API that connects to a real PostgreSQL database for curated, read-only demonstrations.
 
-Open `index.html` in a browser to run the app. It uses the OCI supported extensions page as the reference list:
-
-https://docs.oracle.com/en-us/iaas/Content/postgresql/extensions.htm
+Open `index.html` in a browser to run the static app. Oracle's [OCI Database with PostgreSQL overview](https://docs.oracle.com/en-us/iaas/Content/postgresql/overview.htm) remains the service reference.
 
 ## Live database mode
 
@@ -37,13 +35,19 @@ Requirements:
 
 6. Open `http://localhost:8787/#live`.
 
-Live mode checks the real extension catalog, reports installed versus available extensions, and runs curated read-only demo endpoints. It does not expose a general SQL console.
+Live mode checks the real extension catalog, reports database connection and health context, and runs curated read-only demo endpoints. It does not expose a general SQL console or replace OCI Monitoring.
 
-Included extension stories:
+## Showcase stories
 
+- Availability and scale: multi-node high availability, read replicas, reader endpoints, managed storage, and flexible capacity
 - Disaster recovery with backups, cross-region backup copies, warm standby replication, RPO enforcement, and switchover runbooks
+- Migration and major-version upgrade readiness with pg_dump/restore, native logical replication, pglogical guidance, and GoldenGate CDC
+- Observability: OCI metrics, alarms, Query Insights, PostgreSQL workload evidence, logging, events, configurations, and maintenance-window guidance
+- Security and governance: IAM, private VCN access, Vault, encryption, auditing, protected values, and federation
 - `pgvector` and `pg_trgm` for AI matching and fuzzy search
-- `pg_stat_statements`, `pg_repack`, `pg_buffercache`, and `pgstattuple` for performance operations
+- `pg_stat_statements`, `pg_repack`, `pg_buffercache`, and `pgstattuple` for query, cache, bloat, and maintenance evidence
 - `PostGIS` for location intelligence
 - `pg_cron` and `pg_partman` for lifecycle automation
 - `pgaudit`, `pgcrypto`, `postgres_fdw`, and `pglogical` for governed data products
+
+The Observability story also explains two external Grafana architectures without embedding either one in the showcase: the [OCI data source for Grafana](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/grafana.htm) for OCI Monitoring metrics, and [PostgreSQL Exporter with Prometheus and Grafana](https://docs.oracle.com/en/learn/ocipgsql-promgra/index.html) for deeper database telemetry.
