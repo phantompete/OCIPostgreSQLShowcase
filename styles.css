@@ -415,6 +415,30 @@ a {
 
 .overview-grid {
   grid-template-columns: repeat(5, minmax(165px, 1fr));
+  column-gap: 16px;
+  row-gap: 42px;
+}
+
+.overview-journey {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--teal);
+  padding: 3px 0 3px 16px;
+}
+
+.overview-journey h3 {
+  margin: 3px 0 0;
+  font-size: 1.1rem;
+}
+
+.overview-journey > p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .two-col {
@@ -446,6 +470,100 @@ a {
   flex-direction: column;
   gap: 12px;
   padding: 17px;
+}
+
+.overview-card {
+  position: relative;
+  z-index: 0;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--fast),
+    box-shadow var(--fast),
+    transform var(--fast);
+}
+
+.overview-card::after {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  color: var(--teal);
+  content: "→";
+  font-size: 1.15rem;
+  font-weight: 760;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (min-width: 1181px) {
+  .overview-card:not(:nth-child(5n)):not(:last-child)::after {
+    display: block;
+    top: 50%;
+    right: -15px;
+    transform: translateY(-50%);
+  }
+
+  .overview-card:nth-child(5)::after {
+    display: block;
+    right: 50%;
+    bottom: -30px;
+    content: "↓";
+    transform: translateX(50%);
+  }
+}
+
+.overview-card:hover {
+  border-color: rgba(5, 122, 117, 0.4);
+  box-shadow: 0 14px 30px rgba(5, 122, 117, 0.13);
+  transform: translateY(-3px);
+}
+
+.overview-card:focus-visible {
+  outline: 3px solid rgba(5, 122, 117, 0.35);
+  outline-offset: 3px;
+}
+
+.overview-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.overview-step,
+.overview-phase,
+.overview-card-link {
+  font-size: 0.72rem;
+  font-weight: 820;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.overview-step {
+  color: var(--muted);
+}
+
+.overview-phase {
+  color: var(--teal);
+}
+
+.overview-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--teal);
+  letter-spacing: 0.02em;
+}
+
+.overview-card-link svg {
+  width: 15px;
+  height: 15px;
+  transition: transform var(--fast);
+}
+
+.overview-card:hover .overview-card-link svg {
+  transform: translateX(3px);
 }
 
 .card-icon {
@@ -1724,6 +1842,23 @@ a {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .overview-card:not(:nth-child(3n)):not(:last-child)::after {
+    display: block;
+    top: 50%;
+    right: -15px;
+    transform: translateY(-50%);
+  }
+
+  .overview-card:nth-child(3)::after,
+  .overview-card:nth-child(6)::after,
+  .overview-card:nth-child(9)::after {
+    display: block;
+    right: 50%;
+    bottom: -30px;
+    content: "↓";
+    transform: translateX(50%);
+  }
+
   .metric-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1741,6 +1876,14 @@ a {
   .ai-flow-step:nth-child(3)::after {
     display: none;
   }
+}
+
+.review-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 @media (max-width: 940px) {
@@ -1797,6 +1940,29 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .overview-card:nth-child(odd):not(:last-child)::after {
+    display: block;
+    top: 50%;
+    right: -15px;
+    bottom: auto;
+    content: "→";
+    transform: translateY(-50%);
+  }
+
+  .overview-card:nth-child(2n):not(:last-child)::after {
+    display: block;
+    right: 50%;
+    bottom: -30px;
+    content: "↓";
+    transform: translateX(50%);
+  }
+
+  .overview-journey {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    align-items: start;
+  }
+
   .ai-flow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1822,6 +1988,23 @@ a {
   .overview-grid,
   .metric-strip {
     grid-template-columns: 1fr;
+  }
+
+  .overview-grid {
+    row-gap: 36px;
+  }
+
+  .overview-card:nth-child(n):not(:last-child)::after {
+    display: block;
+    top: auto;
+    right: 50%;
+    bottom: -28px;
+    content: "↓";
+    transform: translateX(50%);
+  }
+
+  .overview-card:last-child::after {
+    display: none;
   }
 
   .hero h3 {

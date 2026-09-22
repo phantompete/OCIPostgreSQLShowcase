@@ -1,11 +1,11 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)));
-const port = Number(process.env.PORT || process.env.SHOWCASE_PORT || 8787);
+const publicFiles = new Set(["/index.html", "/app.js", "/styles.css", "/assets/postgres-showcase-logo.png"]);
 const standoutExtensions = [
   ["pgvector", "vector"],
   ["pg_trgm", "pg_trgm"],
@@ -23,6 +23,7 @@ const standoutExtensions = [
 ];
 
 loadEnv();
+const port = Number(process.env.PORT || process.env.SHOWCASE_PORT || 8787);
 
 let pool;
 let pgLoadError;
@@ -58,12 +59,29 @@ async function getPool() {
   try {
     const { Pool } = await import("pg");
     const sslMode = process.env.PGSSLMODE || process.env.PGSSL || "";
+    // Keep URL-based pg TLS settings intact unless an explicit environment mode is used.
+    const connectionString = process.env.DATABASE_URL;
+    let ssl;
+    if (sslMode) {
+      if (!["require", "disable"].includes(sslMode.toLowerCase())) {
+        throw new Error("Use PGSSLMODE=require for OCI or disable for a local test database.");
+      }
+      const connectionUrl = new URL(connectionString);
+      for (const name of ["sslmode", "sslrootcert", "sslcert", "sslkey", "ssl", "uselibpqcompat"]) {
+        if (connectionUrl.searchParams.has(name)) {
+          throw new Error("Configure TLS in DATABASE_URL or PGSSLMODE, not both.");
+        }
+      }
+      ssl = sslMode.toLowerCase() === "disable" ? false : {
+        rejectUnauthorized: false,
+      };
+    }
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: 6,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 8000,
-      ssl: sslMode.toLowerCase() === "require" ? { rejectUnauthorized: false } : undefined,
+      ssl,
     });
     return pool;
   } catch (error) {
@@ -79,13 +97,14 @@ async function query(sql, params = []) {
       ok: false,
       configured: Boolean(process.env.DATABASE_URL),
       error: pgLoadError
-        ? "The pg package is not installed. Run npm install before using live database mode."
+        ? "Database driver or TLS setup failed. Check npm install and TLS settings."
         : "DATABASE_URL is not configured. Copy .env.example to .env and set your connection string.",
     };
   }
 
-  const client = await db.connect();
+  let client;
   try {
+    client = await db.connect();
     await client.query(`
       SELECT set_config(
         'search_path',
@@ -102,7 +121,7 @@ async function query(sql, params = []) {
   } catch (error) {
     return { ok: false, error: safeDbError(error), code: error.code };
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
@@ -416,26 +435,32 @@ function demoError(result, hint) {
 }
 
 async function serveStatic(req, res, url) {
-  let pathname = decodeURIComponent(url.pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    res.writeHead(400);
+    res.end("Bad request");
+    return;
+  }
   if (pathname === "/") {
     pathname = "/index.html";
   }
 
-  const filePath = normalize(join(root, pathname));
-  if (!filePath.startsWith(root)) {
-    res.writeHead(403);
-    res.end("Forbidden");
+  if (!publicFiles.has(pathname)) {
+    res.writeHead(404);
+    res.end("Not found");
     return;
   }
+  const filePath = join(root, pathname);
 
   try {
     const body = await readFile(filePath);
     res.writeHead(200, { "content-type": contentType(filePath) });
     res.end(body);
   } catch {
-    const body = await readFile(join(root, "index.html"));
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    res.end(body);
+    res.writeHead(404);
+    res.end("Not found");
   }
 }
 
@@ -453,7 +478,7 @@ function contentType(filePath) {
 }
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const url = new URL(req.url || "/", "http://localhost");
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -465,6 +490,12 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method !== "GET") {
+    res.writeHead(405, { allow: "GET, OPTIONS" });
+    res.end("Method not allowed");
+    return;
+  }
+
   if (url.pathname.startsWith("/api/")) {
     await handleApi(req, res, url);
     return;
@@ -473,8 +504,8 @@ const server = createServer(async (req, res) => {
   await serveStatic(req, res, url);
 });
 
-server.listen(port, () => {
-  console.log(`OCI PostgreSQL showcase running at http://localhost:${port}`);
+server.listen(port, "127.0.0.1", () => {
+  console.log(`OCI PostgreSQL showcase running at http://127.0.0.1:${server.address().port}`);
 });
 
 process.on("SIGINT", async () => {

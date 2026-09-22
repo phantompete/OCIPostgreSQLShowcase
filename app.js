@@ -9,7 +9,7 @@ const pointInTimeRecoverySource =
 const migrationSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/import-export-migrate.htm";
 const nativeLogicalReplicationSource =
-  "https://docs.oracle.com/en-us/iaas/Content/postgresql/storage-best-practices.htm";
+  "https://www.postgresql.org/docs/17/logical-replication-restrictions.html";
 const pglogicalSource =
   "https://docs.oracle.com/en-us/iaas/Content/postgresql/upgrades.htm";
 const serviceOverviewSource =
@@ -30,7 +30,25 @@ const grafanaSource =
   "https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/grafana.htm";
 const prometheusGrafanaSource =
   "https://docs.oracle.com/en/learn/ocipgsql-promgra/index.html";
-const apiBase = window.location.protocol === "file:" ? "http://localhost:8787" : "";
+const postgresReleaseSource =
+  "https://docs.oracle.com/en-us/iaas/releasenotes/services/postgresql/index.htm";
+const readerEndpointSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/enable-ro-endpoint.htm";
+const databaseLimitsSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/manage-databases.htm";
+const encryptionKeySource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/using-own-key.htm";
+const kerberosSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/kerberos.htm";
+const stopStartSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/stop-start-db.htm";
+const connectionSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/connect-to-db.htm";
+const extensionSetupSource =
+  "https://docs.oracle.com/en-us/iaas/Content/postgresql/config-list-enable-extension.htm";
+const goldenGateSupportSource =
+  "https://docs.oracle.com/en/cloud/paas/goldengate-service/ocigg/whats-supported.html";
+const apiBase = window.location.protocol === "file:" ? "http://127.0.0.1:8787" : "";
 
 const pageData = {
   overview: {
@@ -50,6 +68,11 @@ const pageData = {
       ["pg_cron and pg_partman", "Together they support scheduled database jobs and automated partition management for time-series, event, and lifecycle workloads."],
       ["pgaudit, pgcrypto, postgres_fdw, pg_trgm", "These extensions strengthen audit trails, encryption workflows, federated access, and fuzzy text matching for practical enterprise applications."],
     ],
+    references: [
+      ["OCI PostgreSQL service overview", serviceOverviewSource],
+      ["PostgreSQL release notes", postgresReleaseSource],
+      ["Supported extensions", supportedSource],
+    ],
     render: renderOverview,
   },
   live: {
@@ -66,7 +89,9 @@ const pageData = {
       ["Why not browser-to-database", "Direct database connections from a browser would expose credentials and are not how customer-facing demos should be built."],
       ["Operational snapshot", "Uptime and connection headroom are current signals. Connection headroom compares all active database backends with the server limit; cache ratio accumulates since statistics reset, and replay activity is not a guaranteed lag target."],
       ["Setup", "Copy .env.example to .env, set DATABASE_URL, run npm install, optionally run sql/demo_schema.sql, then start the server with npm start."],
+      ["OCI prerequisites", "Connect through an approved private network path. Live Lab TLS encrypts the connection without verifying the server certificate. Enable required extensions in an OCI configuration before creating them in the demo database; catalog availability does not mean installed or permitted for this user."],
     ],
+    references: [["Private connectivity and TLS", connectionSource], ["Enable extensions", extensionSetupSource]],
     render: renderLive,
   },
   availability: {
@@ -81,7 +106,7 @@ const pageData = {
     help: [
       ["Single-node recovery", "OCI can recover a single-node database system onto newly provisioned compute while preserving its endpoint. Use this posture for development, test, or noncritical production workloads."],
       ["Multi-node high availability", "A multi-node database system has a primary plus read replicas. OCI can promote a replica after a fault, and regional placement helps tolerate availability-domain disruption."],
-      ["Reader endpoints", "A reader endpoint provides a single read-only access point for application read traffic across replica nodes. The primary retains the read/write endpoint."],
+      ["Reader endpoints", "The optional reader endpoint distributes connections across replicas, not individual queries. With one node it routes to the primary; use database privileges to enforce read-only access. Its documented throughput limit is 8 Gbps."],
       ["Capacity choices", "Database-optimized storage scales as data changes. Compute shapes and storage performance tiers are selected and adjusted to match workload needs."],
       ["HA and DR are different", "In-region high availability addresses node or availability-domain faults. The DR page addresses backup recovery, point-in-time recovery, and cross-region continuity."],
     ],
@@ -89,6 +114,8 @@ const pageData = {
       ["High availability and business continuity", availabilitySource],
       ["OCI PostgreSQL service overview", serviceOverviewSource],
       ["Create a database system", createDatabaseSource],
+      ["Reader endpoint behavior", readerEndpointSource],
+      ["Database system limits", databaseLimitsSource],
     ],
     render: renderAvailability,
   },
@@ -107,7 +134,7 @@ const pageData = {
       ["RPO and RTO", "RPO is the acceptable amount of data loss; RTO is the acceptable time to restore service. Backup RPO depends on the backup schedule, while Warm Standby can bound RPO when enforcement is enabled."],
       ["Planning targets", "The RPO and RTO values shown in this demo are illustrative planning targets, not OCI service guarantees. Validate them against database size, network readiness, application cutover, and a tested runbook."],
       ["Warm standby roles", "Warm Standby maintains a read/write primary and a continuously updated read-only standby. The primary streams write-ahead logs to the standby until an operator promotes, converts, or switches over."],
-      ["RPO enforcement", "This Warm Standby protection control can switch the primary to read-only when replication lag exceeds the selected RPO, constraining potential data loss while also constraining writes. OCI supports 5 minutes to 3 hours; the default threshold is 5 minutes."],
+      ["RPO enforcement", "Optional and off by default. When enabled, excessive replication lag can pause primary writes. The configurable threshold is 5 minutes to 3 hours, initially 5 minutes."],
       ["Manual failover", "OCI does not provide automatic failover for Warm Standby. An operator must perform the DR promotion, conversion, or switchover workflow and redirect application traffic."],
     ],
     references: [
@@ -134,12 +161,14 @@ const pageData = {
       ["Major-version upgrades", "Use the same planning discipline for version changes: assess compatibility, handle roles separately, rehearse the cutover, validate data and application behavior, then refresh statistics."],
       ["Cutover validation", "Before redirecting traffic, compare data, verify roles and application connectivity, confirm replication has caught up, and retain a tested rollback path."],
       ["Source and target readiness", "Check network access, compatible PostgreSQL versions and extensions, role privileges, logical replication settings, WAL capacity, and target sizing before migration."],
+      ["Supported versions", "OCI documents PostgreSQL 14, 15, 16, and 17. PostgreSQL 14 community support ends on 12 November 2026; OCI deprecation takes effect on 28 May 2027. Include backup restorability in upgrade planning."],
     ],
     references: [
       ["OCI PostgreSQL migration guide", migrationSource],
       ["Native logical replication guidance", nativeLogicalReplicationSource],
       ["pglogical migration guidance", pglogicalSource],
       ["Supported OCI PostgreSQL extensions", supportedSource],
+      ["GoldenGate deployment and connection compatibility", goldenGateSupportSource],
     ],
     render: renderMigration,
   },
@@ -178,6 +207,7 @@ const pageData = {
       ["Logs and events", "PostgreSQL logs, including pgaudit output, can be exported to OCI Logging or Object Storage. OCI events can route resource-state changes to operational workflows."],
       ["Managed configuration", "Use configurations to manage supported PostgreSQL settings consistently across database systems; validate settings and application behavior before rollout."],
       ["Maintenance windows", "OCI management policies let teams choose a maintenance schedule that avoids peak activity. Applications should still use connection retries for planned node work."],
+      ["Stop and start", "Idle demo systems can be stopped to pause compute billing; storage and reduced service charges remain. Data and endpoints persist, but startup can require patching or certificate rotation."],
       ["Grafana options", "Grafana can visualize OCI Monitoring metrics through the OCI data source, or visualize PostgreSQL Exporter metrics collected by Prometheus. These are external monitoring architectures, not built-in showcase integrations."],
     ],
     references: [
@@ -185,6 +215,7 @@ const pageData = {
       ["OCI PostgreSQL Query Insights", queryInsightsSource],
       ["OCI PostgreSQL logging", loggingSource],
       ["OCI PostgreSQL maintenance", maintenanceSource],
+      ["Stop and start database systems", stopStartSource],
       ["OCI data source for Grafana", grafanaSource],
       ["OCI PostgreSQL with Prometheus and Grafana", prometheusGrafanaSource],
     ],
@@ -214,13 +245,19 @@ const pageData = {
     nav: "Automation",
     icon: "calendar-clock",
     pill: "Data lifecycle",
-    heroTitle: "Keep data healthy without downtime.",
+    heroTitle: "Keep recurring data maintenance under control.",
     summary:
       "Automated lifecycle work protects performance and controls data growth without pulling teams away from customer-facing product work.",
     help: [
       ["pg_cron", "Schedules SQL jobs from inside PostgreSQL, including rollups, refreshes, retention policies, and operational checks."],
       ["pg_partman", "Automates time-based and serial-based partition management so high-volume tables stay predictable as they grow."],
       ["pg_repack", "Pairs well with automation when teams want recurring bloat cleanup with minimal application interruption."],
+      ["Enablement and execution", "Enable these extensions through OCI configuration, then install them in the database. Schedules here are examples. pg_repack needs a compatible external client and can acquire locks; it is not a SQL job supplied by pg_cron."],
+    ],
+    references: [
+      ["OCI extension enablement", extensionSetupSource],
+      ["pg_partman procedure reference", "https://github.com/pgpartman/pg_partman/blob/development/doc/pg_partman.md"],
+      ["pg_repack client and locking", "https://reorg.github.io/pg_repack/"],
     ],
     render: renderOperations,
   },
@@ -236,7 +273,8 @@ const pageData = {
     help: [
       ["OCI IAM and compartments", "IAM policies and compartments control who can manage OCI PostgreSQL resources. PostgreSQL roles separately govern access inside the database."],
       ["Private connectivity", "OCI PostgreSQL database system endpoints use private IP addresses in a VCN. Network security groups and subnet rules control which clients can reach them."],
-      ["Vault and encryption", "Administrator credentials can be stored in OCI Vault. OCI PostgreSQL encrypts data in transit and at rest; customers still govern application secrets and database roles."],
+      ["Vault and encryption", "Vault secrets hold credentials; customer-managed Vault keys are a separate option for database encryption. Plan key permissions and availability, including access needed for recovery."],
+      ["Kerberos authentication", "GSSAPI authentication supports Active Directory or MIT Kerberos. It requires a KDC, Vault keytab secret, endpoint principals, and a PostgreSQL user with odsp_kerberos for each principal. Customers manage keytabs and clock synchronization."],
       ["pgaudit", "Produces detailed audit logs for database activity, supporting accountability and regulated access reviews."],
       ["pgcrypto", "Adds cryptographic functions for hashing, random values, and encryption workflows handled close to the data."],
       ["postgres_fdw", "Lets PostgreSQL query remote PostgreSQL tables through foreign data wrappers, useful for governed federation and phased consolidation."],
@@ -246,6 +284,8 @@ const pageData = {
       ["Create a database system", createDatabaseSource],
       ["OCI PostgreSQL service overview", serviceOverviewSource],
       ["OCI PostgreSQL logging", loggingSource],
+      ["Customer-managed encryption keys", encryptionKeySource],
+      ["Kerberos setup and responsibilities", kerberosSource],
     ],
     render: renderTrust,
   },
@@ -315,16 +355,16 @@ function renderPage(route) {
 
 function renderOverview() {
   const cards = [
-    ["network", "Availability and scale", "Multi-node availability, reader endpoints, and flexible capacity make the managed service ready for production demand.", "HA", "read scale", "teal"],
-    ["cloud-cog", "Disaster recovery", "Backup and restore, cross-region backup copies, warm standby replication, RPO guardrails, and switchover storylines.", "Warm Standby", "Backups", "red"],
-    ["git-branch", "Migration", "Choose dump and restore, native logical replication, or GoldenGate CDC for an OCI move with an explicit cutover posture.", "cutover", "validation", "amber"],
-    ["activity", "Observability", "Connect OCI metrics, Query Insights, PostgreSQL evidence, and operating actions to protect customer experience.", "Query Insights", "Grafana", "green"],
-    ["shield-check", "Security and governance", "Combine IAM, private connectivity, Vault, auditing, encryption, and federated data access.", "IAM", "pgaudit", "violet"],
-    ["sparkles", "AI and search", "Recommendations, answer retrieval, support article matching, and next-best action powered by embeddings.", "pgvector", "pg_trgm", "teal"],
-    ["gauge", "Workload health", "High-cost SQL, bloat, cache pressure, and measured tuning impact for operational reviews.", "pg_stat_statements", "pg_repack", "amber"],
-    ["map", "Spatial products", "Nearest asset, coverage zone, branch planning, service territory, and risk overlay experiences.", "PostGIS", "OC1 note", "red"],
-    ["calendar-clock", "Lifecycle automation", "Scheduled retention, partition creation, rollups, and maintenance workflows kept close to the data.", "pg_cron", "pg_partman", "green"],
-    ["database", "Live database lab", "Optional backend mode that checks real extension availability and runs curated demo queries.", "DATABASE_URL", "safe API", "green"],
+    ["01", "Adopt", "git-branch", "Migration", "Choose dump and restore, native logical replication, or GoldenGate CDC for an OCI move with an explicit cutover posture.", "cutover", "validation", "amber", "migration"],
+    ["02", "Foundation", "network", "Availability and scale", "Multi-node availability, reader endpoints, and flexible capacity make the managed service ready for production demand.", "HA", "read scale", "teal", "availability"],
+    ["03", "Govern", "shield-check", "Security and governance", "Combine IAM, private connectivity, Vault, auditing, encryption, and federated data access.", "IAM", "pgaudit", "violet", "trust"],
+    ["04", "Operate", "activity", "Observability", "Connect OCI metrics, Query Insights, PostgreSQL evidence, and operating actions to protect customer experience.", "Query Insights", "Grafana", "green", "observe"],
+    ["05", "Optimize", "gauge", "Workload health", "High-cost SQL, bloat, cache pressure, and measured tuning impact for operational reviews.", "pg_stat_statements", "pg_repack", "amber", "observe"],
+    ["06", "Automate", "calendar-clock", "Lifecycle automation", "Scheduled retention, partition creation, rollups, and maintenance workflows kept close to the data.", "pg_cron", "pg_partman", "green", "operations"],
+    ["07", "Recover", "cloud-cog", "Disaster recovery", "Backup and restore, cross-region backup copies, warm standby replication, RPO guardrails, and switchover storylines.", "Warm Standby", "Backups", "red", "dr"],
+    ["08", "Differentiate", "sparkles", "AI and search", "Recommendations, answer retrieval, support article matching, and next-best action powered by embeddings.", "pgvector", "pg_trgm", "teal", "ai"],
+    ["09", "Expand", "map", "Spatial products", "Nearest asset, coverage zone, branch planning, service territory, and risk overlay experiences.", "PostGIS", "OC1 note", "red", "location"],
+    ["10", "Prove", "database", "Live database lab", "Optional backend mode that checks real extension availability and runs curated demo queries.", "DATABASE_URL", "safe API", "green", "live"],
   ];
 
   return `
@@ -334,19 +374,25 @@ function renderOverview() {
       ${metric("2", "continuity playbooks")}
       ${metric("1", "optional connected lab")}
     </div>
+    <section class="overview-journey" aria-labelledby="overview-journey-title">
+      <div><p class="eyebrow">Presenter flow</p><h3 id="overview-journey-title">Adopt, operate, protect, differentiate, prove</h3></div>
+      <p>Follow the numbered tiles to move from OCI adoption and production foundations through day-two operations, recovery readiness, differentiated workloads, and connected proof.</p>
+    </section>
     <div class="grid overview-grid">
       ${cards
         .map(
-          ([cardIcon, heading, copy, tagOne, tagTwo, color]) => `
-            <article class="card">
-              ${icon(cardIcon, color)}
+          ([step, phase, cardIcon, heading, copy, tagOne, tagTwo, color, route]) => `
+            <a class="card overview-card" href="#${route}" aria-label="Step ${step}: ${heading}. Open this section.">
+              <div class="overview-card-top">${icon(cardIcon, color)}<span class="overview-step">${step}</span></div>
+              <span class="overview-phase">${phase}</span>
               <h3>${heading}</h3>
               <p>${copy}</p>
               <div class="tag-row">
                 <span class="tag">${tagOne}</span>
                 <span class="tag">${tagTwo}</span>
               </div>
-            </article>
+              <span class="overview-card-link">Open section <i data-lucide="arrow-right" aria-hidden="true"></i></span>
+            </a>
           `,
         )
         .join("")}
@@ -373,13 +419,13 @@ function renderAvailability() {
     </section>
 
     <div class="grid two-col availability-detail-grid">
-      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Choose the service posture</p><h3>Match resilience to business impact</h3></div></div><div class="mini-stack">${mini("Single node", "Use for development, test, or noncritical workloads where restored service is sufficient and read scale is not required.", "Simple")}${mini("Multi-node HA", "Use a primary plus replicas when customer-facing availability needs automatic in-region promotion after a node fault.", "Resilient")}${mini("Regional placement", "Use nodes across availability domains where the workload must tolerate an availability-domain disruption.", "Stronger continuity")}</div></section>
-      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Scale deliberately</p><h3>Change the resource that is constrained</h3></div></div><div class="mini-stack">${mini("Read scale", "Add read replicas and use the reader endpoint when read traffic is the limiting workload.", "Replica nodes")}${mini("Compute and temporary capacity", "Select flexible compute shapes and performance tiers to fit CPU, memory, temporary files, and I/O demand.", "Right-size")}${mini("Data and WAL storage", "Database-optimized storage grows with managed database data; monitor WAL and workload behavior as capacity changes.", "Auto-scale storage")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Choose the service posture</p><h3>Match resilience to business impact</h3></div></div><div class="mini-stack">${mini("Single node", "Use for development, test, or noncritical workloads where restored service is sufficient and read scale is not required.", "Simple")}${mini("Multi-node HA", "Use a primary plus replicas when customer-facing availability needs automatic in-region promotion after a node fault.", "Resilient")}${mini("Regional placement", "Select regional data placement in a multi-AD region for availability-domain resilience; a single-AD region uses fault domains.", "Stronger continuity")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Scale deliberately</p><h3>Change the resource that is constrained</h3></div></div><div class="mini-stack">${mini("Read scale", "A system supports one primary and up to seven replicas. The optional reader endpoint balances connections; long-lived pools need an appropriate reconnect strategy.", "Replica nodes")}${mini("Compute and temporary capacity", "Select flexible compute shapes and performance tiers to fit CPU, memory, temporary files, and I/O demand.", "Right-size")}${mini("Data and WAL storage", "Shared data and WAL storage grows up to the documented 32 TB system limit. Temporary storage is a separate constraint; monitor both.", "Auto-scale storage")}</div></section>
     </div>
 
     ${tradeoffPanel(
       [["Protect customer-facing service", "Use in-region HA and reader endpoints to keep critical workloads available and responsive."], ["Scale with demand", "Separate read scaling, compute sizing, and managed storage choices so teams can target the real constraint."]],
-      [["More nodes need a routing plan", "Applications must direct writes to the primary and suitable reads to the reader endpoint."], ["High availability does not replace recovery planning", "Keep backup, point-in-time recovery, and cross-region decisions explicit for data-loss and regional scenarios."]],
+      [["More nodes need a routing plan", "Direct writes to the primary. With a single node the reader endpoint also reaches the primary; enforce read-only use through database roles."], ["High availability does not replace recovery planning", "Keep backup, point-in-time recovery, and cross-region decisions explicit for data-loss and regional scenarios."]],
     )}
   `;
 }
@@ -400,7 +446,7 @@ const drPatternData = {
   warm: {
     label: "Warm Standby", title: "Keep a read-only database ready for DR action",
     copy: "The primary continuously streams WAL to a read-only standby in another region. OCI requires a manual conversion or promotion and application cutover; it does not provide automatic failover.",
-    indicators: [["RPO target", "5 minutes, enforced", "teal"], ["RTO target", "30–60 minutes, manual", "amber"], ["Standby role", "Read-only until promotion", "teal"]],
+    indicators: [["Example RPO setting", "5 minutes if enabled", "teal"], ["RTO target", "30–60 minutes, manual", "amber"], ["Standby role", "Read-only until promotion", "teal"]],
     runbook: [["01", "Detect the outage", "Confirm the primary region cannot serve application traffic.", "hot"], ["02", "Convert or promote standby", "Manually make the recovery-region database the active system.", "warn"], ["03", "Redirect application traffic", "Move the application to the new primary endpoint and validate service.", "hot"], ["04", "Rebuild protection", "Rebuild the original region as standby; optionally switch back when ready.", "ok"]],
   },
 };
@@ -417,7 +463,7 @@ function renderDR() {
       <div class="dr-comparison-scroll"><table><thead><tr><th>Recovery option</th><th>Best fit</th><th>RPO target</th><th>RTO target</th><th>Operator runbook</th></tr></thead><tbody>
         <tr><th>Backup &amp; Restore</th><td>Durable recovery points and regional recovery</td><td>24 hours with daily backups</td><td>4–8 hours</td><td>Restore, cut over traffic, validate, protect again</td></tr>
         <tr><th>Point-in-Time Recovery</th><td>Accidental deletion, bad deployments, or logical corruption</td><td>15 minutes</td><td>1–3 hours</td><td>Select timestamp, create new database, validate, cut over</td></tr>
-        <tr><th>Warm Standby</th><td>Regional continuity with a ready standby</td><td>5 minutes, enforced</td><td>30–60 minutes, manual</td><td>Promote or convert, cut over traffic, rebuild standby</td></tr>
+        <tr><th>Warm Standby</th><td>Regional continuity with a ready standby</td><td>5 minutes if enforcement enabled</td><td>30–60 minutes, manual</td><td>Promote or convert, cut over traffic, rebuild standby</td></tr>
       </tbody></table></div>
     </section>
   `;
@@ -432,11 +478,12 @@ function renderDRPattern(pattern) {
       : `<div class="dr-diagram warm-diagram" aria-label="Read write primary streaming WAL to a read only warm standby"><div class="dr-region-card primary"><span class="region-label">Primary region</span><i data-lucide="database" aria-hidden="true"></i><strong>OCI PostgreSQL</strong><small>Read/write primary</small><b>RW</b></div><div class="replication-lane"><span class="wal-line"></span><span class="wal-pulse pulse-one"></span><span class="wal-pulse pulse-two"></span><span class="wal-pulse pulse-three"></span><p>Animated WAL stream</p></div><div class="dr-region-card standby"><span class="region-label">Recovery region</span><i data-lucide="database" aria-hidden="true"></i><strong>OCI PostgreSQL</strong><small>Read-only standby</small><b>RO</b></div></div>`;
   return `
     <section class="scenario-panel dr-pattern-panel"><div class="panel-heading"><div><p class="eyebrow">Recovery pattern</p><h3>${data.title}</h3></div><span class="tag">${data.label}</span></div><p class="dr-pattern-copy">${data.copy}</p>${diagram}
-      ${pattern === "warm" ? `<aside class="rpo-control"><i data-lucide="shield-check" aria-hidden="true"></i><div><strong>RPO enforcement is a protection control</strong><p>When enabled, it switches the primary to read-only if lag exceeds the selected RPO, constraining potential data loss and also constraining writes. OCI supports 5 minutes to 3 hours; the default is 5 minutes.</p></div><span class="tag">Enabled · 5 min default</span></aside>` : ""}
+      ${pattern === "warm" ? `<aside class="rpo-control"><i data-lucide="shield-check" aria-hidden="true"></i><div><strong>RPO enforcement is optional</strong><p>Off by default. When enabled, lag above the threshold pauses primary writes until catch-up. Choose 5 minutes to 3 hours; the initial threshold is 5 minutes.</p></div><span class="tag">Opt in</span></aside>` : ""}
+      <p class="dr-copy">${pattern === "warm" ? "Prepare destination configurations and extensions separately; they are not replicated. Rehearse switchover and emergency conversion as distinct procedures." : pattern === "pitr" ? "Enable a recovery policy first, with up to 35 restore days. Use the actual active recovery window; the illustrative 15-minute target is not a guaranteed recovery-point freshness." : "Verify retention, successful cross-region copies, and restore permissions before relying on a recovery-region backup."}</p>
       <div class="dr-indicators">${data.indicators.map(([label, value, tone]) => `<article class="dr-indicator ${tone}"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div>
     </section>
     <div class="grid two-col dr-detail-grid"><section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Operator runbook</p><h3>${data.label} recovery steps</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section>
-      <section class="code-panel dr-guidance"><div class="panel-heading"><div><p class="eyebrow">Recovery indicators</p><h3>Illustrative planning targets</h3></div></div><pre><code>${pattern === "backup" ? "Backup & Restore\n\nRPO target: 24 hours\n            (daily backups)\nRTO target: 4–8 hours\nIncludes restore and cutover" : pattern === "pitr" ? "Point-in-Time Recovery\n\nRPO target: 15 minutes\nRTO target: 1–3 hours\nChoose a time inside the window\nCreate, validate, and cut over" : "Warm Standby\n\nRPO target: 5 minutes enforced\nRTO target: 30–60 minutes\nManual promotion and cutover\nFailover: not automatic"}</code></pre></section></div>`;
+      <section class="code-panel dr-guidance"><div class="panel-heading"><div><p class="eyebrow">Recovery indicators</p><h3>Illustrative planning targets</h3></div></div><pre><code>${pattern === "backup" ? "Backup & Restore\n\nRPO target: 24 hours\n            (daily backups)\nRTO target: 4–8 hours\nIncludes restore and cutover" : pattern === "pitr" ? "Point-in-Time Recovery\n\nRPO target: 15 minutes\nRTO target: 1–3 hours\nChoose a time inside the window\nCreate, validate, and cut over" : "Warm Standby\n\nExample RPO: 5 minutes if enabled\nRTO target: 30–60 minutes\nManual promotion and cutover\nFailover: not automatic"}</code></pre></section></div>`;
 }
 
 function drDiagramNode(iconName, titleText, copy, tone) {
@@ -467,11 +514,11 @@ const migrationPatternData = {
   },
   goldengate: {
     label: "GoldenGate Initial Load + CDC",
-    title: "Load at scale, then capture change",
+    title: "Load at scale while retaining changes",
     copy: "Use Oracle GoldenGate Initial Load plus change data capture to seed a large or complex target and continuously apply source changes until a near-zero-downtime cutover.",
     indicators: [["Illustrative size", "Over 1 TB or complex", "teal"], ["Downtime posture", "Near-zero cutover downtime", "amber"], ["Migration tool", "GoldenGate Initial Load + CDC", "teal"]],
-    runbook: [["01", "Prepare source and target", "Verify networking, source logical replication settings, migration privileges, target schema, and GoldenGate connections.", "warn"], ["02", "Run Initial Load", "Start the initial load extract and Replicat to populate the OCI target.", "warn"], ["03", "Run CDC and reconcile", "Start change capture, monitor lag, and compare target data before the cutover window.", "hot"], ["04", "Freeze writes and cut over", "Allow CDC to catch up, validate the target, then move application traffic to OCI.", "ok"]],
-    checklist: "GoldenGate Initial Load + CDC\n\n[ ] Create source and target connections\n[ ] Prepare schema and checkpoint table\n[ ] Start Initial Load before CDC Replicat\n[ ] Reconcile counts and change lag\n[ ] Retain rollback and validation runbooks",
+    runbook: [["01", "Prepare source and target", "Verify the GoldenGate deployment/version matrix, supported types, networking, source WAL, privileges, and target schema.", "warn"], ["02", "Coordinate capture and Initial Load", "Establish change capture and retain trails before loading data; align the initial load with the documented CDC start position.", "warn"], ["03", "Apply CDC and reconcile", "Apply retained changes with the selected instantiation workflow, monitor lag, and reconcile data without gaps or duplicates.", "hot"], ["04", "Freeze writes and cut over", "Allow CDC to catch up, validate the target, then move application traffic to OCI.", "ok"]],
+    checklist: "GoldenGate Initial Load + CDC\n\n[ ] Create source and target connections\n[ ] Prepare schema and checkpoint table\n[ ] Align capture, initial load, and CDC positions\n[ ] Reconcile counts and change lag\n[ ] Retain rollback and validation runbooks",
   },
 };
 
@@ -502,6 +549,7 @@ function renderMigration() {
 
     <section class="scenario-panel migration-upgrade-readiness">
       <div class="panel-heading"><div><p class="eyebrow">Major-version upgrade readiness</p><h3>Use the migration playbook for planned upgrades</h3></div><span class="tag">Test before cutover</span></div>
+      <p class="migration-copy">Supported majors: PostgreSQL 14, 15, 16, and 17. Plan PostgreSQL 14 upgrades before OCI deprecation on 28 May 2027; community support ends on 12 November 2026. Upgrade and re-back up retained version 14 data before the OCI restore restriction takes effect.</p>
       <div class="grid two-col"><div class="mini-stack">${mini("Planned upgrade", "Use pg_dump and pg_restore when a controlled switchover window is acceptable. Move roles separately and validate applications before redirecting traffic.", "pg_dump + restore")}${mini("Low-downtime upgrade", "Use pglogical only when its tested replication capabilities justify the added extension configuration and operating complexity.", "pglogical")}</div><div class="code-panel migration-upgrade-checklist"><div class="panel-heading"><div><p class="eyebrow">Always validate</p><h3>Upgrade control points</h3></div></div><pre><code>[ ] Confirm target version and extensions&#10;[ ] Export and validate roles separately&#10;[ ] Rehearse application compatibility&#10;[ ] Compare data before cutover&#10;[ ] Refresh statistics after restore</code></pre></div></div>
     </section>
 
@@ -530,7 +578,7 @@ function renderMigrationPattern(pattern) {
       <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Sample runbook</p><h3>${data.label} migration steps</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section>
       <section class="code-panel migration-guidance"><div class="panel-heading"><div><p class="eyebrow">Cutover checklist</p><h3>Validate before traffic moves</h3></div></div><pre><code>${data.checklist}</code></pre></section>
     </div>
-    ${data.pglogicalDecision ? `<section class="scenario-panel migration-advanced-option"><div class="panel-heading"><div><p class="eyebrow">Advanced alternative</p><h3>When pglogical is worth it</h3></div><span class="tag">Use intentionally</span></div><div class="grid two-col migration-decision-grid">${mini("Choose pglogical for", "Selective table, row, or column replication; advanced multi-provider or bidirectional topologies; conflict-handling needs; or a tested cross-version migration workflow.", "Capability")}${mini("Accept the tradeoff", "Enable and operate the OCI extension, manage added replication complexity, and continue to coordinate and validate DDL changes before cutover.", "Operations")}</div></section>` : ""}
+    ${data.pglogicalDecision ? `<section class="scenario-panel migration-advanced-option"><div class="panel-heading"><div><p class="eyebrow">Advanced alternative</p><h3>When pglogical is worth it</h3></div><span class="tag">Use intentionally</span></div><div class="grid two-col migration-decision-grid">${mini("Choose pglogical for", "A tested cross-version migration or selective replication workflow that needs pglogical capabilities. Confirm the installed version and managed-service privileges before choosing a topology.", "Capability")}${mini("Accept the tradeoff", "Enable and operate the OCI extension, manage added replication complexity, and continue to coordinate and validate DDL changes before cutover.", "Operations")}</div></section>` : ""}
   `;
 }
 
@@ -620,6 +668,7 @@ npm start</code></pre>
               <h3>Live intent search</h3>
             </div>
           </div>
+          <p>Uses seeded three-dimensional example vectors and live trigram matching; no embedding model is called.</p>
           <form class="live-form" id="live-search-form">
             <select class="text-input" id="live-scenario" aria-label="Scenario">
               <option value="support">Support</option>
@@ -697,6 +746,7 @@ npm start</code></pre>
 
 function renderAi() {
   return `
+    <p>Illustrative outcomes and simulated AI patterns; these percentages are not measured benchmarks. No model or embedding service is connected.</p>
     <div class="metric-strip ai-value-strip">
       ${metric("62%", "faster answer retrieval")}
       ${metric("31%", "case deflection uplift")}
@@ -762,7 +812,7 @@ LIMIT 5;</code></pre>
       <section class="scenario-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Live scenario</p>
+            <p class="eyebrow">Illustrative scenario</p>
             <h3>Customer intent matcher</h3>
           </div>
           <div class="segmented" data-scenario-tabs>
@@ -869,8 +919,8 @@ const observabilityPatternData = {
 function renderObservability() {
   const queries = [
     ["customer_orders_rollup", "42% total time", "pg_stat_statements", "hot"],
-    ["inventory_by_region", "18% cache misses", "pg_buffercache", "warn"],
-    ["events_2026_q2", "31 GB reclaim", "pg_repack", "ok"],
+    ["inventory_by_region", "18% buffer residency", "pg_buffercache", "warn"],
+    ["events_2026_q2", "31 GB estimated bloat", "pgstattuple", "warn"],
   ];
 
   return `
@@ -879,18 +929,19 @@ function renderObservability() {
       <div class="grid four-col">${mini("Detect", "Use OCI service metrics, alarms, and notifications to identify customer-impacting conditions.", "OCI Monitoring")}${mini("Diagnose", "Use Query Insights and PostgreSQL workload evidence to connect sessions, waits, and SQL to the signal.", "Query context")}${mini("Improve", "Prioritize query, cache, bloat, capacity, or maintenance changes using measured evidence.", "Tuning")}${mini("Operate", "Use logs, events, configurations, and maintenance windows to make the improvement dependable.", "Runbook")}</div>
     </section>
 
+    <p class="observability-copy">Static figures below are illustrative. For live database values, open Live Lab; OCI metrics and Query Insights require your OCI environment.</p>
     <div class="grid two-col observability-detail-grid">
-      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">OCI Query Insights</p><h3>See active sessions, waits, and top queries</h3></div><span class="tag">OCI-native</span></div><div class="mini-stack">${mini("Average active sessions", "Review CPU and wait-event activity over time to locate contention and resource pressure.", "Sessions")}${mini("Top queries", "Rank and filter statements by load, query count, mean execution time, database, role, and instance.", "SQL")}${mini("Enable deliberately", "Query Insights uses compute resources; enabling or disabling it restarts the database system.", "Restart")}</div></section>
-      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Monitoring surfaces</p><h3>Choose the dashboard that fits the estate</h3></div></div><div class="mini-stack">${mini("OCI Monitoring + Query Insights", "Use OCI service metrics, alarms, and managed query analysis for the database system.", "OCI")}${mini("Grafana OCI data source", "Visualize oci_postgresql metrics alongside other cloud and application metrics in Grafana.", "External")}${mini("PostgreSQL Exporter → Prometheus → Grafana", "Collect deeper PostgreSQL metrics for Grafana dashboards, including bloat and query-level views.", "External")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">OCI Query Insights</p><h3>See active sessions, waits, and top queries</h3></div><span class="tag">OCI-native</span></div><div class="mini-stack">${mini("Average active sessions", "Review CPU and wait-event activity over time to locate contention and resource pressure.", "Sessions")}${mini("Top queries", "Rank and filter statements by load, query count, mean execution time, database, role, and instance.", "SQL")}${mini("Enable deliberately", "Query Insights uses compute resources; enabling or disabling it restarts the database system.", "Restart")}${mini("Idle demo environments", "Stop/start preserves data and endpoints while pausing compute billing. Storage and reduced service charges remain; allow startup time for patching and certificate rotation.", "Stop/start")}</div></section>
+      <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Monitoring surfaces</p><h3>Choose the dashboard that fits the estate</h3></div></div><div class="mini-stack">${mini("OCI Monitoring + Query Insights", "Use OCI service metrics, alarms, and managed query analysis for the database system.", "OCI")}${mini("Grafana OCI data source", "Visualize oci_postgresql metrics alongside other cloud and application metrics in Grafana.", "External")}${mini("PostgreSQL Exporter → Prometheus → Grafana", "Collect PostgreSQL telemetry through an externally operated exporter. Bloat and query-level views require suitable collectors, queries, and permissions.", "External")}</div></section>
     </div>
 
     <div class="grid two-col">
       <section class="scenario-panel">
-        <div class="panel-heading"><div><p class="eyebrow">PostgreSQL workload evidence</p><h3>Evidence-led tuning queue</h3></div></div>
+        <div class="panel-heading"><div><p class="eyebrow">PostgreSQL workload evidence</p><h3>Illustrative tuning queue</h3></div></div>
         <div class="query-table">${queries.map(([name, value, extension, state]) => `<div class="query-row"><div><p>${name}</p><span>${extension}</span></div><strong>${value}</strong><span class="status ${state}">${state}</span></div>`).join("")}</div>
       </section>
       <section class="chart-panel">
-        <div class="panel-heading"><div><p class="eyebrow">Before and after</p><h3>Measured maintenance impact</h3></div></div>
+        <div class="panel-heading"><div><p class="eyebrow">Before and after</p><h3>Illustrative maintenance impact</h3></div></div>
         <div class="bar-list">${bar("Query p95 latency", "860 ms", 86, "red")}${bar("After repack and index rebuild", "310 ms", 31, "")}${bar("Table bloat reclaimed", "64%", 64, "amber")}${bar("Shared buffer residency", "77%", 77, "")}</div>
       </section>
     </div>
@@ -907,6 +958,7 @@ function renderObservabilityPattern(pattern) {
   const data = observabilityPatternData[pattern] || observabilityPatternData.detect;
   return `
     <section class="scenario-panel observability-pattern-panel"><div class="panel-heading"><div><p class="eyebrow">${data.label}</p><h3>${data.title}</h3></div><span class="tag">OCI-native operations</span></div><p class="observability-copy">${data.copy}</p><div class="observability-signal-grid">${data.signals.map(([titleText, copy, value]) => mini(titleText, copy, value)).join("")}</div></section>
+    <p class="observability-copy">Static figures below are illustrative. For live database values, open Live Lab; OCI metrics and Query Insights require your OCI environment.</p>
     <div class="grid two-col observability-detail-grid"><section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Sample operating runbook</p><h3>Keep response work explicit</h3></div></div><div class="timeline">${data.runbook.map(([step, titleText, copy, tone]) => drEvent(step, titleText, copy, tone)).join("")}</div></section><section class="code-panel observability-guidance"><div class="panel-heading"><div><p class="eyebrow">Scope and handoff</p><h3>Use signals with context</h3></div></div><pre><code>${data.guidance}</code></pre></section></div>
   `;
 }
@@ -1006,7 +1058,7 @@ function renderOperations() {
       <section class="scenario-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Maintenance calendar</p>
+            <p class="eyebrow">Illustrative maintenance calendar</p>
             <h3>Automated data lifecycle</h3>
           </div>
         </div>
@@ -1031,16 +1083,17 @@ function renderOperations() {
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Pattern</p>
-            <h3>Schedule lifecycle SQL</h3>
+            <h3>Illustrative lifecycle SQL</h3>
           </div>
         </div>
+        <p>Enable and install the required extensions first. Replace the example procedure and schema names with your own; run pg_repack from a compatible external client.</p>
         <pre><code>SELECT cron.schedule(
   'nightly-retention',
   '30 2 * * *',
   $$CALL archive_expired_customer_events();$$
 );
 
-SELECT partman.run_maintenance_proc();</code></pre>
+CALL partman.run_maintenance_proc();</code></pre>
       </section>
     </div>
 
@@ -1064,16 +1117,17 @@ function renderTrust() {
       <div class="governance-layers" role="img" aria-label="OCI IAM, private networking, Vault and encryption, and PostgreSQL data controls layered to protect an OCI PostgreSQL workload">
         <article class="governance-layer iam"><i data-lucide="users-round" aria-hidden="true"></i><div><strong>OCI IAM and compartments</strong><span>Control who can manage database systems, configurations, backups, and service resources.</span></div><b>Control plane</b></article>
         <article class="governance-layer network"><i data-lucide="network" aria-hidden="true"></i><div><strong>Private VCN access and NSGs</strong><span>Keep database endpoints private and allow only approved application and administration paths.</span></div><b>Connectivity</b></article>
-        <article class="governance-layer protection"><i data-lucide="key-round" aria-hidden="true"></i><div><strong>Vault, secrets, and encryption</strong><span>Use Vault-backed administrator secrets and protect data in transit and at rest.</span></div><b>Protection</b></article>
+        <article class="governance-layer protection"><i data-lucide="key-round" aria-hidden="true"></i><div><strong>Vault, secrets, and encryption</strong><span>Keep credentials in Vault secrets; choose Oracle-managed or customer-managed Vault encryption keys. Use TLS for client connections.</span></div><b>Protection</b></article>
         <article class="governance-layer data"><i data-lucide="database" aria-hidden="true"></i><div><strong>PostgreSQL roles and data controls</strong><span>Apply least-privilege roles, auditing, protected values, and governed federation inside the serving path.</span></div><b>Data plane</b></article>
       </div>
     </section>
 
+    <section class="scenario-panel"><div class="panel-heading"><div><p class="eyebrow">Identity and key ownership</p><h3>Plan credentials and recovery together</h3></div></div><div class="grid two-col">${mini("Customer-managed keys", "Grant the service access to the Vault key. Disabling it makes the system inactive within an hour; retained backups still need their original key.", "Vault keys")}${mini("Kerberos / GSSAPI", "Use AD or MIT Kerberos with a Vault keytab and a mapped database user per principal. Own keytab rotation, clock synchronization, and KDC availability.", "Enterprise identity")}</div></section>
     <div class="grid two-col">
       <section class="scenario-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Database control evidence</p>
+            <p class="eyebrow">Illustrative database controls</p>
             <h3>Governed access trail</h3>
           </div>
         </div>
@@ -1086,7 +1140,7 @@ function renderTrust() {
       <section class="chart-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Data product posture</p>
+            <p class="eyebrow">Illustrative data product posture</p>
             <h3>Controls in the serving path</h3>
           </div>
         </div>
@@ -1921,7 +1975,7 @@ function openHelp() {
     ${
       page.references
         ? `<article class="help-item support-note">
-            <h3>Oracle references</h3>
+            <h3>Reference documentation</h3>
             ${page.references
               .map(([label, href]) => `<p><a href="${href}" target="_blank" rel="noreferrer">${label}</a></p>`)
               .join("")}
